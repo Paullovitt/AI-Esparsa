@@ -56,7 +56,7 @@ O checkpoint `modelos/v6_base.pt` corresponde à melhor execução:
 - PPL inédita de teste `1,9077`;
 - localização da resposta `100%`;
 - recuperação causal `100%`;
-- geração controlada `100%`.
+- acurácia do primeiro token do local, em avaliação controlada, `100%`.
 
 Ele é carregado com `strict=True` nos testes e não deve ser sobrescrito.
 
@@ -70,24 +70,61 @@ Protocolo: três sementes, cinco épocas e quinze checkpoints V6.
 | Acurácia de token | 77,41% |
 | Localização da resposta | 100% |
 | Recuperação causal | 100% |
-| Geração em 72 prompts | 100% |
+| Primeiro token do local em 72 prompts | 100% |
 | PPL com FFN removida | 4,9899 |
 
-A ablação confirma que a FFN participa efetivamente da previsão.
+A ablação confirma que a FFN participa efetivamente da previsão. O valor de
+100% não representa geração livre: ele mede somente o primeiro token do local
+correto nos 72 prompts controlados.
 
 ## Desempenho
 
-O caminho integrado atual usa `torch.sparse.mm`:
+O caminho integrado atual usa `torch.sparse.mm`. A tabela histórica abaixo mede
+somente o `forward`, com descritores e candidatos preparados antes do cronômetro:
 
 | Entrada | Média | Mínimo | Máximo |
 |---|---:|---:|---:|
 | 73 tokens, lote 64 | 0,897 M tokens/s | 0,873 M | 0,913 M |
 | 512 tokens, lote 16 | 1,068 M tokens/s | 1,062 M | 1,072 M |
 
-Os valores são médias de três sementes registradas em `v6_ultimo.json`. A
-qualidade e a compactação estão aprovadas. O próximo passo de otimização é um
-kernel CUDA específico para estados contínuos, fundindo COO, Top-12, residual e
-LayerNorm.
+Os valores são médias de três sementes registradas em `v6_ultimo.json`.
+
+O teste isolado também mediu, na mesma execução, o `forward` e o pipeline desde
+os tokens, incluindo descritores e seleção de candidatos:
+
+| Entrada | Forward isolado | Pipeline completo |
+|---|---:|---:|
+| 73 tokens, lote 64 | 0,955 M tokens/s | 0,555 M tokens/s |
+| 512 tokens, lote 16 | 0,984 M tokens/s | 0,296 M tokens/s |
+
+Esses números são de uma execução do checkpoint canônico e não substituem a
+média histórica de três sementes. Eles tornam explícito o custo que antes ficava
+fora do cronômetro.
+
+## Teste isolado de roteamento
+
+`testar_v6_isolado.py` preserva `modelos/v6_base.pt` e avalia duas dúvidas:
+roteamento sem mapas semânticos manuais e geração autorregressiva até `EOS`.
+O roteador experimental usa apenas um codebook esparso treinável, Top-12 e
+supervisão da posição de origem do fato. Portanto, ele aprende o roteamento, mas
+o teste ainda é supervisionado e não comprova descoberta semântica autônoma.
+
+Resultados nas combinações inéditas:
+
+| Configuração | PPL | Acurácia de token | Local correto | Recuperação |
+|---|---:|---:|---:|---:|
+| V6 canônica, descritores manuais | 1,9077 | 77,35% | 100% | 100% |
+| Roteador aprendido, leitor original | 2,6347 | 72,40% | 87,87% | 99,95% |
+| Roteador e leitor Q/K adaptado | 3,6330 | 63,93% | 100% | 100% |
+
+O roteador chegou a `100%` de Top-1 sem mapas manuais, mas a adaptação não
+preservou PPL nem qualidade global. Na geração livre da própria V6 canônica, as
+72 sequências tiveram `0,00%` de correspondência exata, `61,11%` de término em
+`EOS`, `41,07%` de tokens alinhados e `42,13%` de locais alinhados. A variante
+experimental não foi promovida; a V6 canônica permanece como modelo-base.
+
+O relatório reproduzível está em
+`resultados/teste_isolado_v6_ultimo.json`.
 
 ## Dependências
 
@@ -125,7 +162,14 @@ C:\Users\USER\Downloads\MeuProjetoIA\venv_cuda\Scripts\python.exe `
   -m unittest discover -s testes -p "test_*.py" -v
 ```
 
-A suíte atual possui nove testes automatizados.
+Executar novamente o experimento isolado de cinco épocas:
+
+```powershell
+C:\Users\USER\Downloads\MeuProjetoIA\venv_cuda\Scripts\python.exe `
+  testar_v6_isolado.py
+```
+
+A suíte atual possui quinze testes automatizados.
 
 ## Exemplo de uso
 
@@ -151,10 +195,13 @@ print(modelo.auditoria())
 - `src/camada_linear_esparsa.py`: primitiva COO usada pela FFN;
 - `executar_v6.py`: carga estrita e avaliação do checkpoint oficial;
 - `treinar_v6.py`: treino oficial em três sementes e cinco épocas;
+- `testar_v6_isolado.py`: auditoria de pipeline, geração livre e roteador
+  esparso aprendido sem alterar o checkpoint oficial;
 - `testes/test_modelo_v6.py`: causalidade, topologia, ablação e gradientes;
 - `testes/test_checkpoint_v6.py`: contrato e recarga do checkpoint canônico.
 - `testes/test_documentacao_v6.py`: confere métricas documentadas contra o
   relatório canônico.
+- `testes/test_v6_isolado.py`: contratos causais e de esparsidade do experimento.
 
 ## Estrutura
 
@@ -163,6 +210,8 @@ COMPARACAO_ATENCAO_DENSA_ESPARSA/
   modelos/
     v6_base.pt
   resultados/
+    teste_isolado_v6_20260726_150927/
+    teste_isolado_v6_ultimo.json
     v6_20260726_142346/
     v6_ultimo.json
   src/
@@ -171,8 +220,11 @@ COMPARACAO_ATENCAO_DENSA_ESPARSA/
   testes/
     test_modelo_v6.py
     test_checkpoint_v6.py
+    test_documentacao_v6.py
+    test_v6_isolado.py
   DOCUMENTO_MODELO_V6.md
   executar_v6.py
+  testar_v6_isolado.py
   treinar_v6.py
 ```
 
@@ -180,6 +232,11 @@ COMPARACAO_ATENCAO_DENSA_ESPARSA/
 
 - o corpus atual é controlado e possui vocabulário de 49 tokens;
 - o resultado ainda não comprova linguagem natural aberta;
+- o roteador aprendido usa o rótulo da posição correta do fato durante o treino;
+- a V6 ainda não gera sequências livres confiáveis, apesar do acerto controlado
+  do primeiro token;
+- a seleção atual compara pares de códigos e cresce quadraticamente com a
+  sequência e a largura do descritor;
 - o kernel CUDA isolado da FFN discreta não aceita diretamente os estados
   contínuos usados pela V6;
 - qualquer otimização futura deve preservar exatamente a saída PyTorch antes de

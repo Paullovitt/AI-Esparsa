@@ -23,6 +23,13 @@ class TesteDocumentacaoV6(unittest.TestCase):
                 encoding="utf-8"
             )
         )
+        cls.relatorio_isolado = json.loads(
+            (
+                RAIZ
+                / "resultados"
+                / "teste_isolado_v6_ultimo.json"
+            ).read_text(encoding="utf-8")
+        )
         cls.readme = (RAIZ / "README.md").read_text(encoding="utf-8")
         cls.status = (RAIZ / "STATUS.md").read_text(encoding="utf-8")
         cls.documento = (RAIZ / "DOCUMENTO_MODELO_V6.md").read_text(
@@ -63,6 +70,72 @@ class TesteDocumentacaoV6(unittest.TestCase):
                 + " M tokens/s",
                 self.readme,
             )
+
+    def test_auditoria_isolada_esta_documentada_sem_inflar_metricas(
+        self,
+    ) -> None:
+        isolado = self.relatorio_isolado
+        aprendido = isolado["aprendido_sem_leitor_qk"]["qualidade"]
+        adaptado = isolado["aprendido_com_leitor_qk"]["qualidade"]
+        geracao = isolado["manual"]["geracao_livre"]
+        benchmark = isolado["benchmark"]["manual"]
+        esperados = {
+            formatar_decimal(aprendido["ppl"], 4),
+            formatar_decimal(
+                aprendido["acuracia_local_resposta"] * 100, 2
+            )
+            + "%",
+            formatar_decimal(
+                aprendido["recuperacao_fato"] * 100, 2
+            )
+            + "%",
+            formatar_decimal(adaptado["ppl"], 4),
+            formatar_decimal(geracao["sequencias_exatas"] * 100, 2)
+            + "%",
+            formatar_decimal(geracao["taxa_eos"] * 100, 2) + "%",
+            formatar_decimal(
+                geracao["acuracia_tokens_alinhados"] * 100, 2
+            )
+            + "%",
+            formatar_decimal(
+                geracao["acuracia_locais_alinhados"] * 100, 2
+            )
+            + "%",
+            formatar_decimal(
+                benchmark["73"]["pipeline_completo"][
+                    "tokens_por_segundo"
+                ]
+                / 1_000_000,
+                3,
+            )
+            + " M tokens/s",
+            formatar_decimal(
+                benchmark["512"]["pipeline_completo"][
+                    "tokens_por_segundo"
+                ]
+                / 1_000_000,
+                3,
+            )
+            + " M tokens/s",
+        }
+        for documento in (self.readme, self.status, self.documento):
+            for valor in esperados:
+                self.assertIn(valor, documento)
+
+        self.assertEqual(
+            isolado["decisao"],
+            "nao_promover_roteador_aprendido_manter_v6_base",
+        )
+        self.assertFalse(
+            isolado["criterios"][
+                "ppl_sem_leitor_ate_5_porcento_da_base"
+            ]
+        )
+        self.assertFalse(
+            isolado["criterios"][
+                "geracao_livre_base_exata_minimo_90"
+            ]
+        )
 
 
 if __name__ == "__main__":

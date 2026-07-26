@@ -35,7 +35,7 @@ possuem 3.456 conexões e densidade estrutural de 25%. O modelo completo possui
 - PPL inédita de teste: `1,9077`;
 - localização da resposta: `100%`;
 - recuperação causal: `100%`;
-- geração controlada: `100%`.
+- primeiro token do local na avaliação controlada: `100%`.
 
 ## Validação
 
@@ -44,11 +44,16 @@ separadamente. A média da V6 foi:
 
 - PPL: `1,9196`;
 - acurácia de token: `77,41%`;
-- localização, recuperação e geração: `100%`;
+- localização, recuperação e primeiro token controlado: `100%`;
 - PPL sem a FFN após ablação: `4,9899`.
 
-A suíte de nove testes verifica causalidade, topologia COO, gradientes esparsos,
+A suíte de quinze testes verifica causalidade, topologia COO, gradientes esparsos,
 determinismo, recarga estrita do checkpoint e consistência da documentação.
+
+O antigo rótulo “geração 100%” era impreciso: a avaliação verificava somente o
+primeiro token do local correto em 72 prompts. Na geração livre até `EOS`, a V6
+obteve `0,00%` de sequências exatas, `61,11%` de término, `41,07%` de tokens
+alinhados e `42,13%` de locais alinhados.
 
 ## Estado de desempenho
 
@@ -57,6 +62,28 @@ com `torch.sparse.mm` ainda é mais lento que o modelo sem FFN. O próximo traba
 de otimização deve fundir as projeções COO, Top-12, residual e LayerNorm em um
 kernel CUDA próprio para estados contínuos, preservando exatamente os pesos do
 checkpoint canônico.
+
+O benchmark histórico mede apenas o `forward`. A auditoria isolada incluiu
+descritores e seleção de candidatos: `0,555 M tokens/s` para 73 tokens/lote 64
+e `0,296 M tokens/s` para 512 tokens/lote 16. Na mesma execução, o `forward`
+isolado mediu respectivamente `0,955 M tokens/s` e `0,984 M tokens/s`.
+
+## Auditoria de roteamento aprendido
+
+Foi treinado por cinco épocas um roteador com codebook esparso e Top-12, sem
+mapas manuais de entidade, objeto ou papel. O treino é supervisionado pela
+posição correta do fato, logo não representa aprendizado sem rótulos.
+
+- roteamento Top-1 sem mapas manuais: `100%`;
+- leitor original: PPL `2,6347`, local `87,87%`, recuperação `99,95%`;
+- leitor Q/K adaptado: PPL `3,6330`, local e recuperação `100%`;
+- decisão: não promover a variante, pois o roteamento funcionou, mas PPL,
+  qualidade global, geração livre, velocidade e VRAM não foram preservados.
+
+O checkpoint canônico não foi modificado. Checkpoints das cinco épocas do
+roteador e das cinco épocas do leitor experimental foram mantidos apenas no
+diretório do teste, com relatório em
+`resultados/teste_isolado_v6_ultimo.json`.
 
 ## Regras de evolução
 
