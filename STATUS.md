@@ -5,6 +5,8 @@ Ano: 2026
 
 - Modelo-base oficial: V6.
 - Checkpoint canônico: `modelos/v6_base.pt`.
+- Evolução aprovada como candidata: V6.1 posicional.
+- Checkpoint candidato: `modelos/v61_candidata.pt`.
 - Semente canônica: 20260727.
 - Época canônica: 5.
 - Parâmetros: 9.621.
@@ -32,8 +34,23 @@ Ano: 2026
   recuperação 99,95%.
 - Leitor Q/K adaptado: recuperação de 100%, mas PPL 3,6330.
 - Decisão do teste isolado: não promover; manter a V6 canônica intacta.
-- Próxima otimização: kernel CUDA da FFN textual contínua.
+- V6.1: posição senoidal fixa, três slots e dois papéis esparsos.
+- Parâmetros V6.1: 9.632, somente 11 a mais que a V6.
+- PPL V6.1 em quatro sementes inéditas: 1,5317 média.
+- Acurácia de token V6.1: 88,06% média.
+- Geração livre exata V6.1: 93,06% média.
+- Tokens livres alinhados V6.1: 99,17% média.
+- Locais livres V6.1: 99,54% média e 99,07% no pior caso.
+- Pipeline V6.1, 73 tokens/lote 64: 0,536 M tokens/s, 104,05% da V6.
+- Pipeline V6.1, 512 tokens/lote 16: 0,279 M tokens/s, 99,72% da V6.
+- VRAM temporária da V6.1: igual à V6 nas médias pareadas.
+- Códigos temporais fixos: armazenados em cache, sem mudar as previsões.
+- Decisão V6.1: candidata aprovada; V6 preservada como rollback.
+- Limite V6.1: slots e papéis ainda dependem da estrutura fixa do corpus.
+- Próximo experimento: aprender slots e papéis em sequências variáveis.
+- Próxima otimização: índice causal invertido para seleção de candidatos.
 - Relatório: `resultados/v6_ultimo.json`.
 - Relatório isolado: `resultados/teste_isolado_v6_ultimo.json`.
+- Relatório V6.1: `resultados/v61_candidata_validacao.json`.
 - Documento técnico: `DOCUMENTO_MODELO_V6.md`.
-- Suíte automatizada: 15 testes aprovados.
+- Suíte automatizada: 23 testes aprovados.

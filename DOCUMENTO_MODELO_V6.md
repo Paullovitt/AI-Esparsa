@@ -47,7 +47,7 @@ separadamente. A média da V6 foi:
 - localização, recuperação e primeiro token controlado: `100%`;
 - PPL sem a FFN após ablação: `4,9899`.
 
-A suíte de quinze testes verifica causalidade, topologia COO, gradientes esparsos,
+A suíte de vinte e três testes verifica causalidade, topologia COO, gradientes esparsos,
 determinismo, recarga estrita do checkpoint e consistência da documentação.
 
 O antigo rótulo “geração 100%” era impreciso: a avaliação verificava somente o
@@ -84,6 +84,58 @@ O checkpoint canônico não foi modificado. Checkpoints das cinco épocas do
 roteador e das cinco épocas do leitor experimental foram mantidos apenas no
 diretório do teste, com relatório em
 `resultados/teste_isolado_v6_ultimo.json`.
+
+## V6.1 posicional candidata
+
+A auditoria da geração livre mostrou que a V6 não tinha sinal explícito de
+ordem. A V6.1 preserva atenção Q/K e FFN esparsas, mas acrescenta posição
+senoidal fixa, um gate escalar e cinco códigos temporais:
+
+- três códigos identificam o slot causal do fato;
+- dois códigos distinguem consulta de objeto e entidade;
+- os códigos reutilizam os dois campos de papel do descritor;
+- a largura permanece 6 e o código temporal não tem pesos treináveis;
+- a arquitetura total passa de 9.621 para 9.632 parâmetros.
+
+O treino isolado usou cinco épocas e salvou cada uma. O checkpoint aprovado está
+em `modelos/v61_candidata.pt`; `modelos/v6_base.pt` continua intacto para
+controle e rollback.
+
+### Validação robusta
+
+Quatro sementes inéditas, com 2.000 histórias e 72 gerações cada:
+
+- PPL: `1,5317` média, máximo `1,5322`;
+- acurácia de token: `88,06%` média;
+- localização e recuperação controladas: `100%`;
+- geração livre exata: `93,06%` média, mínimo `86,11%`;
+- tokens livres alinhados: `99,17%` média;
+- locais livres: `99,54%` média, mínimo `99,07%`.
+
+Três rodadas pareadas do pipeline completo:
+
+- 73 tokens/lote 64: V6 `0,515 M tokens/s`, V6.1
+  `0,536 M tokens/s`, razão `104,05%`;
+- 512 tokens/lote 16: V6 `0,280 M tokens/s`, V6.1
+  `0,279 M tokens/s`, razão `99,72%`;
+- VRAM temporária média: igual entre os modelos, `71,22 MiB` e `392,68 MiB`.
+
+Os códigos temporais e as posições fixas são armazenados em cache. Isso removeu
+a reconstrução repetida no pipeline sem mudar descritores, logits ou checkpoint.
+Como as diferenças de throughput são pequenas, o resultado correto é equivalência
+de velocidade, não garantia de aceleração em qualquer GPU.
+
+A V6.1 foi aprovada como candidata porque todos os critérios registrados no
+relatório passaram. Ela ainda não substitui automaticamente a V6: os slots e
+papéis codificam a estrutura fixa deste corpus e precisam ser generalizados
+antes de afirmar funcionamento em texto aberto ou quantidade variável de fatos.
+
+O próximo experimento deve variar quantidade e tamanho dos fatos e substituir os
+slots absolutos por códigos temporais aprendidos ou relativos. A próxima
+otimização de desempenho deve atacar a seleção causal de candidatos com um
+índice invertido, preservando os resultados do relatório atual.
+
+Relatório: `resultados/v61_candidata_validacao.json`.
 
 ## Regras de evolução
 

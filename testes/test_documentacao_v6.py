@@ -30,6 +30,13 @@ class TesteDocumentacaoV6(unittest.TestCase):
                 / "teste_isolado_v6_ultimo.json"
             ).read_text(encoding="utf-8")
         )
+        cls.relatorio_v61 = json.loads(
+            (
+                RAIZ
+                / "resultados"
+                / "v61_candidata_validacao.json"
+            ).read_text(encoding="utf-8")
+        )
         cls.readme = (RAIZ / "README.md").read_text(encoding="utf-8")
         cls.status = (RAIZ / "STATUS.md").read_text(encoding="utf-8")
         cls.documento = (RAIZ / "DOCUMENTO_MODELO_V6.md").read_text(
@@ -136,6 +143,67 @@ class TesteDocumentacaoV6(unittest.TestCase):
                 "geracao_livre_base_exata_minimo_90"
             ]
         )
+
+        v61 = self.relatorio_v61
+        agregado = v61["agregado"]
+        esperados_v61 = {
+            formatar_decimal(agregado["ppl"]["media"], 4),
+            formatar_decimal(
+                agregado["acuracia_token"]["media"] * 100,
+                2,
+            )
+            + "%",
+            formatar_decimal(
+                agregado["geracao_exata"]["media"] * 100,
+                2,
+            )
+            + "%",
+            formatar_decimal(
+                agregado["tokens_livres"]["media"] * 100,
+                2,
+            )
+            + "%",
+            formatar_decimal(
+                agregado["locais_livres"]["media"] * 100,
+                2,
+            )
+            + "%",
+        }
+        for documento in (self.readme, self.status, self.documento):
+            for valor in esperados_v61:
+                self.assertIn(valor, documento)
+
+        for comprimento in ("73", "512"):
+            benchmark = v61["benchmark_agregado"][comprimento]
+            esperados_benchmark = {
+                formatar_decimal(
+                    benchmark[
+                        "v6_base_tokens_por_segundo"
+                    ]["media"]
+                    / 1_000_000,
+                    3,
+                )
+                + " M tokens/s",
+                formatar_decimal(
+                    benchmark["v61_tokens_por_segundo"]["media"]
+                    / 1_000_000,
+                    3,
+                )
+                + " M tokens/s",
+                formatar_decimal(
+                    benchmark["razao_velocidade_media"] * 100,
+                    2,
+                )
+                + "%",
+            }
+            for documento in (self.readme, self.documento):
+                for valor in esperados_benchmark:
+                    self.assertIn(valor, documento)
+        self.assertEqual(
+            v61["decisao"],
+            "aprovada_como_candidata_v61",
+        )
+        self.assertTrue(all(v61["criterios"].values()))
 
 
 if __name__ == "__main__":

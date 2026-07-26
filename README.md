@@ -13,6 +13,11 @@ O checkpoint canônico está em:
 
 `modelos/v6_base.pt`
 
+A evolução aprovada como candidata, ainda sem substituir o rollback V6, está
+em:
+
+`modelos/v61_candidata.pt`
+
 ## Arquitetura
 
 ```text
@@ -126,6 +131,49 @@ experimental não foi promovida; a V6 canônica permanece como modelo-base.
 O relatório reproduzível está em
 `resultados/teste_isolado_v6_ultimo.json`.
 
+## V6.1 candidata
+
+A V6.1 corrige a ausência de ordem temporal encontrada na geração livre sem
+trocar a atenção ou a FFN esparsas. Ela acrescenta:
+
+- posição senoidal fixa, sem matriz de pesos;
+- um gate posicional escalar;
+- três códigos esparsos de slot e dois de papel, objeto e entidade;
+- reutilização dos dois campos de papel existentes, mantendo o descritor com
+  largura 6;
+- perda reforçada apenas nos tokens que dependem da ordem dos fatos.
+
+Ela possui 9.632 parâmetros, somente 11 a mais que a V6. Q/K continuam sem
+projeções densas, a FFN continua COO e nenhuma `nn.Linear` foi adicionada à
+atenção ou à FFN.
+
+A validação robusta usou quatro sementes de dados inéditos, 72 gerações por
+semente e três rodadas de benchmark:
+
+| Métrica | V6 | V6.1 candidata |
+|---|---:|---:|
+| PPL | 1,9077 | 1,5317 média |
+| Acurácia de token | 77,35% | 88,06% média |
+| Geração livre exata | 0,00% | 93,06% média |
+| Tokens livres alinhados | 41,07% | 99,17% média |
+| Localização e recuperação controladas | 100% | 100% |
+| Locais livres | 42,13% | 99,54% média |
+
+| Pipeline completo | V6 | V6.1 | Razão V6.1/V6 |
+|---|---:|---:|---:|
+| 73 tokens, lote 64 | 0,515 M tokens/s | 0,536 M tokens/s | 104,05% |
+| 512 tokens, lote 16 | 0,280 M tokens/s | 0,279 M tokens/s | 99,72% |
+
+A VRAM temporária média permaneceu igual nas medições pareadas: 71,22 MiB no
+caso curto e 392,68 MiB no longo. Depois de armazenar em cache os códigos
+temporais fixos, a candidata ficou 4,05% mais rápida no caso curto e
+praticamente empatada no longo. Essa diferença pequena deve ser tratada como
+equivalência de desempenho, não como aceleração garantida.
+
+O ganho é válido para o corpus controlado. Os códigos de slot e papel usam sua
+estrutura fixa; portanto, o resultado ainda não comprova textos livres com
+quantidade variável de fatos.
+
 ## Dependências
 
 - Windows;
@@ -146,6 +194,27 @@ Avaliar o checkpoint oficial:
 ```powershell
 C:\Users\USER\Downloads\MeuProjetoIA\venv_cuda\Scripts\python.exe `
   executar_v6.py
+```
+
+Avaliar a candidata V6.1:
+
+```powershell
+C:\Users\USER\Downloads\MeuProjetoIA\venv_cuda\Scripts\python.exe `
+  executar_v61.py
+```
+
+Repetir sua validação robusta:
+
+```powershell
+C:\Users\USER\Downloads\MeuProjetoIA\venv_cuda\Scripts\python.exe `
+  validar_v61_candidata.py
+```
+
+Treinar novamente a candidata por cinco épocas:
+
+```powershell
+C:\Users\USER\Downloads\MeuProjetoIA\venv_cuda\Scripts\python.exe `
+  testar_v61_posicional.py
 ```
 
 Treinar novamente as três sementes por cinco épocas:
@@ -169,7 +238,7 @@ C:\Users\USER\Downloads\MeuProjetoIA\venv_cuda\Scripts\python.exe `
   testar_v6_isolado.py
 ```
 
-A suíte atual possui quinze testes automatizados.
+A suíte atual possui vinte e três testes automatizados.
 
 ## Exemplo de uso
 
@@ -179,6 +248,7 @@ from pathlib import Path
 import torch
 
 from executar_v6 import carregar_v6
+from executar_v61 import carregar_v61
 
 dispositivo = torch.device("cuda")
 modelo, codigo, metadados = carregar_v6(
@@ -186,22 +256,34 @@ modelo, codigo, metadados = carregar_v6(
     dispositivo,
 )
 print(modelo.auditoria())
+
+candidata, codigo_temporal, metadados_v61 = carregar_v61(
+    Path("modelos/v61_candidata.pt"),
+    dispositivo,
+)
+print(candidata.auditoria())
 ```
 
 ## Módulos principais
 
 - `src/modelo_v6.py`: arquitetura oficial, FFN COO e auditoria estrutural;
+- `src/modelo_v61_experimental.py`: posição fixa e roteamento temporal esparso;
 - `src/atencao_causal_texto.py`: corpus, descritores e atenção causal;
 - `src/camada_linear_esparsa.py`: primitiva COO usada pela FFN;
 - `executar_v6.py`: carga estrita e avaliação do checkpoint oficial;
+- `executar_v61.py`: carga estrita e avaliação da candidata V6.1;
 - `treinar_v6.py`: treino oficial em três sementes e cinco épocas;
+- `testar_v61_posicional.py`: treino isolado da candidata por cinco épocas;
+- `validar_v61_candidata.py`: quatro sementes e três rodadas de benchmark;
 - `testar_v6_isolado.py`: auditoria de pipeline, geração livre e roteador
   esparso aprendido sem alterar o checkpoint oficial;
 - `testes/test_modelo_v6.py`: causalidade, topologia, ablação e gradientes;
-- `testes/test_checkpoint_v6.py`: contrato e recarga do checkpoint canônico.
+- `testes/test_checkpoint_v6.py`: contrato e recarga do checkpoint canônico;
+- `testes/test_checkpoint_v61.py`: contrato e recarga da candidata;
 - `testes/test_documentacao_v6.py`: confere métricas documentadas contra o
-  relatório canônico.
-- `testes/test_v6_isolado.py`: contratos causais e de esparsidade do experimento.
+  relatório canônico;
+- `testes/test_v6_isolado.py`: contratos causais e de esparsidade do experimento;
+- `testes/test_v61_posicional.py`: slots, papéis, causalidade e esparsidade V6.1.
 
 ## Estrutura
 
@@ -209,23 +291,33 @@ print(modelo.auditoria())
 COMPARACAO_ATENCAO_DENSA_ESPARSA/
   modelos/
     v6_base.pt
+    v61_candidata.pt
   resultados/
     teste_isolado_v6_20260726_150927/
     teste_isolado_v6_ultimo.json
+    teste_v61_posicional_20260726_154023/
+    teste_v61_posicional_ultimo.json
+    v61_candidata_validacao.json
     v6_20260726_142346/
     v6_ultimo.json
   src/
     modelo_v6.py
+    modelo_v61_experimental.py
     atencao_causal_texto.py
   testes/
     test_modelo_v6.py
     test_checkpoint_v6.py
+    test_checkpoint_v61.py
     test_documentacao_v6.py
     test_v6_isolado.py
+    test_v61_posicional.py
   DOCUMENTO_MODELO_V6.md
   executar_v6.py
+  executar_v61.py
   testar_v6_isolado.py
+  testar_v61_posicional.py
   treinar_v6.py
+  validar_v61_candidata.py
 ```
 
 ## Limitações
@@ -237,6 +329,8 @@ COMPARACAO_ATENCAO_DENSA_ESPARSA/
   do primeiro token;
 - a seleção atual compara pares de códigos e cresce quadraticamente com a
   sequência e a largura do descritor;
+- a V6.1 depende de slots e papéis definidos pela estrutura fixa do corpus;
+- a diferença de velocidade entre V6 e V6.1 está próxima do ruído de medição;
 - o kernel CUDA isolado da FFN discreta não aceita diretamente os estados
   contínuos usados pela V6;
 - qualquer otimização futura deve preservar exatamente a saída PyTorch antes de
