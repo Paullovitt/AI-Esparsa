@@ -34,12 +34,12 @@ class TesteDocumentacaoV6(unittest.TestCase):
             (
                 RAIZ
                 / "resultados"
-                / "v61_candidata_validacao.json"
+                / "v61_base_validacao.json"
             ).read_text(encoding="utf-8")
         )
         cls.readme = (RAIZ / "README.md").read_text(encoding="utf-8")
         cls.status = (RAIZ / "STATUS.md").read_text(encoding="utf-8")
-        cls.documento = (RAIZ / "DOCUMENTO_MODELO_V6.md").read_text(
+        cls.documento = (RAIZ / "DOCUMENTO_MODELO_V61.md").read_text(
             encoding="utf-8"
         )
 
@@ -178,7 +178,7 @@ class TesteDocumentacaoV6(unittest.TestCase):
             esperados_benchmark = {
                 formatar_decimal(
                     benchmark[
-                        "v6_base_tokens_por_segundo"
+                        "v6_rollback_tokens_por_segundo"
                     ]["media"]
                     / 1_000_000,
                     3,
@@ -201,7 +201,7 @@ class TesteDocumentacaoV6(unittest.TestCase):
                     self.assertIn(valor, documento)
         self.assertEqual(
             v61["decisao"],
-            "aprovada_como_candidata_v61",
+            "base_v61_aprovada",
         )
         self.assertTrue(all(v61["criterios"].values()))
 

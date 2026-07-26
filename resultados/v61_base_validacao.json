@@ -1,11 +1,11 @@
 {
-  "experimento": "validacao_robusta_v61_candidata",
+  "experimento": "validacao_robusta_v61_base",
   "autor": "Paulo Augusto",
   "ano": 2026,
-  "checkpoint_v61": "C:\\Users\\USER\\Downloads\\MeuProjetoIA\\COMPARACAO_ATENCAO_DENSA_ESPARSA\\modelos\\v61_candidata.pt",
+  "checkpoint_v61": "C:\\Users\\USER\\Downloads\\MeuProjetoIA\\COMPARACAO_ATENCAO_DENSA_ESPARSA\\modelos\\v61_base.pt",
   "checkpoint_v61_semente": 20260727,
   "checkpoint_v61_epoca": 5,
-  "checkpoint_v6": "C:\\Users\\USER\\Downloads\\MeuProjetoIA\\COMPARACAO_ATENCAO_DENSA_ESPARSA\\modelos\\v6_base.pt",
+  "checkpoint_v6": "C:\\Users\\USER\\Downloads\\MeuProjetoIA\\COMPARACAO_ATENCAO_DENSA_ESPARSA\\modelos\\v6_rollback.pt",
   "checkpoint_v6_semente": 20260727,
   "checkpoint_v6_epoca": 5,
   "v6_modificada": false,
@@ -154,7 +154,7 @@
   "rodadas_benchmark": [
     {
       "rodada": 1,
-      "v6_base": {
+      "v6_rollback": {
         "73": {
           "forward_isolado": {
             "latencia_ms": 6.386465000014141,
@@ -249,7 +249,7 @@
     },
     {
       "rodada": 2,
-      "v6_base": {
+      "v6_rollback": {
         "73": {
           "forward_isolado": {
             "latencia_ms": 5.206829999951879,
@@ -344,7 +344,7 @@
     },
     {
       "rodada": 3,
-      "v6_base": {
+      "v6_rollback": {
         "73": {
           "forward_isolado": {
             "latencia_ms": 4.77258000000802,
@@ -440,7 +440,7 @@
   ],
   "benchmark_agregado": {
     "73": {
-      "v6_base_tokens_por_segundo": {
+      "v6_rollback_tokens_por_segundo": {
         "media": 515184.971895769,
         "minimo": 456565.4492752366,
         "maximo": 550590.5118616488,
@@ -453,7 +453,7 @@
         "desvio": 10714.453278214425
       },
       "razao_velocidade_media": 1.0405494667524864,
-      "v6_base_vram_mib": {
+      "v6_rollback_vram_mib": {
         "media": 71.22314453125,
         "minimo": 71.22314453125,
         "maximo": 71.22314453125,
@@ -467,7 +467,7 @@
       }
     },
     "512": {
-      "v6_base_tokens_por_segundo": {
+      "v6_rollback_tokens_por_segundo": {
         "media": 280158.9710664703,
         "minimo": 276969.6303758695,
         "maximo": 284495.8117481395,
@@ -480,7 +480,7 @@
         "desvio": 901.5142590273629
       },
       "razao_velocidade_media": 0.9971725018698429,
-      "v6_base_vram_mib": {
+      "v6_rollback_vram_mib": {
         "media": 392.67578125,
         "minimo": 392.67578125,
         "maximo": 392.67578125,
@@ -502,6 +502,6 @@
     "pipeline_medio_minimo_75_porcento": true,
     "vram_media_ate_5_porcento": true
   },
-  "decisao": "aprovada_como_candidata_v61",
+  "decisao": "base_v61_aprovada",
   "limite": "O slot e os papeis temporais usam a estrutura fixa do corpus. A validacao nao comprova textos de tamanho ou formato livre."
 }

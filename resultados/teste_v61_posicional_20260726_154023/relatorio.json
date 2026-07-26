@@ -2,7 +2,7 @@
   "experimento": "v61_posicional_isolada",
   "autor": "Paulo Augusto",
   "ano": 2026,
-  "checkpoint_v6": "C:\\Users\\USER\\Downloads\\MeuProjetoIA\\COMPARACAO_ATENCAO_DENSA_ESPARSA\\modelos\\v6_base.pt",
+  "checkpoint_v6": "C:\\Users\\USER\\Downloads\\MeuProjetoIA\\COMPARACAO_ATENCAO_DENSA_ESPARSA\\modelos\\v6_rollback.pt",
   "checkpoint_v6_semente": 20260727,
   "checkpoint_v6_epoca": 5,
   "v6_modificada": false,
@@ -275,8 +275,8 @@
     "pipeline_minimo_75_porcento_da_v6": true,
     "sem_qk_denso_e_ffn_sem_linear": true
   },
-  "decisao": "candidata_a_promocao",
+  "decisao": "promovida_para_base",
   "interpretacao": "A posicao senoidal preserva ordem sem pesos densos. O codigo temporal acrescenta uma feature de slot e uma de papel do corpus controlado; deve ser revalidado em sequencias variaveis.",
   "status_benchmark": "historico_anterior_ao_cache_temporal",
-  "benchmark_atual": "resultados/v61_candidata_validacao.json"
+  "benchmark_atual": "resultados/v61_base_validacao.json"
 }

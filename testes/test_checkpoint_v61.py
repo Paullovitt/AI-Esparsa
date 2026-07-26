@@ -1,4 +1,4 @@
-"""Valida o contrato do checkpoint candidato V6.1."""
+"""Valida o contrato do checkpoint-base V6.1."""
 
 from __future__ import annotations
 
@@ -23,8 +23,9 @@ class TesteCheckpointV61(unittest.TestCase):
         )
         self.assertEqual(
             checkpoint["modelo"],
-            "V6.1-posicional-experimental",
+            "V6.1-base",
         )
+        self.assertEqual(checkpoint["status"], "base_oficial")
         self.assertEqual(checkpoint["epoca"], 5)
         self.assertEqual(checkpoint["semente"], 20260727)
 

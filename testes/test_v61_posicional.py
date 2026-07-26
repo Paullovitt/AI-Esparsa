@@ -13,7 +13,7 @@ from src.atencao_causal_texto import (
     criar_vocabulario,
     gerar_corpus_texto_causal,
 )
-from src.modelo_v61_experimental import (
+from src.modelo_v61 import (
     DIMENSAO_FEATURES_BASE,
     CodigoTemporalEsparso,
     ModeloV61Posicional,

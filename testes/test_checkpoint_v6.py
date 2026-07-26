@@ -12,7 +12,7 @@ from executar_v6 import carregar_v6
 
 
 RAIZ = Path(__file__).resolve().parents[1]
-CHECKPOINT = RAIZ / "modelos" / "v6_base.pt"
+CHECKPOINT = RAIZ / "modelos" / "v6_rollback.pt"
 
 
 class TesteCheckpointV6(unittest.TestCase):

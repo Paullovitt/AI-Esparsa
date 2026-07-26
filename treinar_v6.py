@@ -461,7 +461,7 @@ def main() -> None:
         "autor": "Paulo Augusto",
         "ano": 2026,
         "versao_modelo": "V6",
-        "checkpoint_canonico": "modelos/v6_base.pt",
+        "checkpoint_rollback": "modelos/v6_rollback.pt",
         "gpu": torch.cuda.get_device_name(),
         "torch": torch.__version__,
         "sementes": list(SEMENTES),

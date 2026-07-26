@@ -2,7 +2,7 @@
   "experimento": "auditoria_isolada_v6",
   "autor": "Paulo Augusto",
   "ano": 2026,
-  "checkpoint_v6": "C:\\Users\\USER\\Downloads\\MeuProjetoIA\\COMPARACAO_ATENCAO_DENSA_ESPARSA\\modelos\\v6_base.pt",
+  "checkpoint_v6": "C:\\Users\\USER\\Downloads\\MeuProjetoIA\\COMPARACAO_ATENCAO_DENSA_ESPARSA\\modelos\\v6_rollback.pt",
   "checkpoint_v6_semente": 20260727,
   "checkpoint_v6_epoca": 5,
   "v6_modificada": false,

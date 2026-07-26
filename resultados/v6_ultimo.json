@@ -371,5 +371,5 @@
     "bytes_checkpoints":  672945,
     "observacao":  "A FFN textual usa topologia aleatoria balanceada sobre as 48 dimensoes; nao recebe campos, regras ou semantica do dataset.",
     "nome":  "V6 Base",
-    "checkpoint_canonico":  "modelos/v6_base.pt"
+    "checkpoint_rollback":  "modelos/v6_rollback.pt"
 }

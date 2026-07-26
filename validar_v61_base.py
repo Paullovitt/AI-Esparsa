@@ -1,4 +1,4 @@
-"""Valida a candidata V6.1 em varias amostras e medicoes.
+"""Valida a V6.1 Base em varias amostras e medicoes.
 
 Autor: Paulo Augusto
 Ano: 2026
@@ -28,7 +28,7 @@ from treinar_v6 import avaliar
 
 
 RAIZ = Path(__file__).resolve().parent
-RESULTADO = RAIZ / "resultados" / "v61_candidata_validacao.json"
+RESULTADO = RAIZ / "resultados" / "v61_base_validacao.json"
 SEMENTES_DADOS = (303, 404, 505, 606)
 
 
@@ -168,9 +168,9 @@ def main() -> None:
     }
     rodadas_benchmark = []
     for rodada in range(1, 4):
-        registro = {"rodada": rodada, "v6_base": {}, "v61": {}}
+        registro = {"rodada": rodada, "v6_rollback": {}, "v61": {}}
         for comprimento, lote in ((73, 64), (512, 16)):
-            registro["v6_base"][str(comprimento)] = (
+            registro["v6_rollback"][str(comprimento)] = (
                 benchmark_pipeline(
                     modelo_base,
                     tokens_benchmark,
@@ -233,7 +233,7 @@ def main() -> None:
     for comprimento in ("73", "512"):
         base_tps = agregar_benchmark(
             rodadas_benchmark,
-            "v6_base",
+            "v6_rollback",
             comprimento,
             "tokens_por_segundo",
         )
@@ -245,7 +245,7 @@ def main() -> None:
         )
         base_vram = agregar_benchmark(
             rodadas_benchmark,
-            "v6_base",
+            "v6_rollback",
             comprimento,
             "vram_temporaria_mib",
         )
@@ -256,12 +256,12 @@ def main() -> None:
             "vram_temporaria_mib",
         )
         benchmark_agregado[comprimento] = {
-            "v6_base_tokens_por_segundo": base_tps,
+            "v6_rollback_tokens_por_segundo": base_tps,
             "v61_tokens_por_segundo": v61_tps,
             "razao_velocidade_media": (
                 v61_tps["media"] / base_tps["media"]
             ),
-            "v6_base_vram_mib": base_vram,
+            "v6_rollback_vram_mib": base_vram,
             "v61_vram_mib": v61_vram,
         }
 
@@ -288,14 +288,14 @@ def main() -> None:
                 "v61_vram_mib"
             ]["media"]
             <= benchmark_agregado[comprimento][
-                "v6_base_vram_mib"
+                "v6_rollback_vram_mib"
             ]["media"]
             * 1.05
             for comprimento in ("73", "512")
         ),
     }
     relatorio = {
-        "experimento": "validacao_robusta_v61_candidata",
+        "experimento": "validacao_robusta_v61_base",
         "autor": "Paulo Augusto",
         "ano": 2026,
         "checkpoint_v61": str(CHECKPOINT_V61),
@@ -313,7 +313,7 @@ def main() -> None:
         "benchmark_agregado": benchmark_agregado,
         "criterios": criterios,
         "decisao": (
-            "aprovada_como_candidata_v61"
+            "base_v61_aprovada"
             if all(criterios.values())
             else "reprovada_manter_v6"
         ),

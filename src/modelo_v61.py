@@ -1,6 +1,6 @@
-"""Variante V6.1 com ordem temporal explicita e esparsa.
+"""Modelo-base V6.1 com ordem temporal explicita e esparsa.
 
-O modulo existe apenas para experimento. Ele nao altera a V6 canonica.
+O modulo preserva a V6 anterior apenas como rollback.
 
 Autor: Paulo Augusto
 Ano: 2026
@@ -319,7 +319,7 @@ class MiniLMCausalPosicional(MiniLMCausal):
 
 
 class ModeloV61Posicional(ModeloV6):
-    """V6 experimental com ordem temporal, sem trocar atencao ou FFN."""
+    """V6.1 Base com ordem temporal, sem trocar atencao ou FFN."""
 
     def __init__(
         self,
@@ -346,7 +346,7 @@ class ModeloV61Posicional(ModeloV6):
         resultado = super().auditoria()
         resultado.update(
             {
-                "modelo": "V6.1-posicional-experimental",
+                "modelo": "V6.1-base",
                 "posicao": "senoidal_fixa",
                 "parametros_posicionais": 1,
                 "gate_posicao": float(

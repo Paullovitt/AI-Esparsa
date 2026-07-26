@@ -1,4 +1,4 @@
-"""Carrega e avalia estritamente o checkpoint candidato V6.1.
+"""Carrega e avalia estritamente o checkpoint-base V6.1.
 
 Autor: Paulo Augusto
 Ano: 2026
@@ -17,7 +17,7 @@ from src.atencao_causal_texto import (
     gerar_corpus_texto_causal,
     selecionar_candidatos_causais,
 )
-from src.modelo_v61_experimental import (
+from src.modelo_v61 import (
     CodigoTemporalEsparso,
     ModeloV61Posicional,
 )
@@ -26,7 +26,7 @@ from treinar_v6 import avaliar
 
 
 RAIZ = Path(__file__).resolve().parent
-CHECKPOINT_V61 = RAIZ / "modelos" / "v61_candidata.pt"
+CHECKPOINT_V61 = RAIZ / "modelos" / "v61_base.pt"
 
 
 def carregar_v61(
@@ -42,8 +42,8 @@ def carregar_v61(
         map_location=dispositivo,
         weights_only=False,
     )
-    if checkpoint.get("modelo") != "V6.1-posicional-experimental":
-        raise ValueError("checkpoint nao pertence a V6.1 posicional")
+    if checkpoint.get("modelo") != "V6.1-base":
+        raise ValueError("checkpoint nao pertence a V6.1 Base")
     configuracao = ConfiguracaoTextoCausal(
         **checkpoint["configuracao_texto"]
     )
@@ -69,7 +69,7 @@ def carregar_v61(
 def main() -> None:
     if not CHECKPOINT_V61.exists():
         raise FileNotFoundError(
-            f"checkpoint candidato ausente: {CHECKPOINT_V61}"
+            f"checkpoint-base ausente: {CHECKPOINT_V61}"
         )
     dispositivo = torch.device(
         "cuda" if torch.cuda.is_available() else "cpu"

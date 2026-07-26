@@ -27,7 +27,7 @@ from src.atencao_causal_texto import (
     gerar_corpus_texto_causal,
     selecionar_candidatos_causais,
 )
-from src.modelo_v61_experimental import (
+from src.modelo_v61 import (
     DIMENSAO_FEATURES_BASE,
     CodigoTemporalEsparso,
     ModeloV61Posicional,
@@ -259,7 +259,7 @@ def main() -> None:
         torch.save(
             {
                 "estado_modelo": modelo.state_dict(),
-                "modelo": "V6.1-posicional-experimental",
+                "modelo": "V6.1-base",
                 "semente": SEMENTE,
                 "epoca": epoca,
                 "configuracao_texto": asdict(CONFIGURACAO_V61),
@@ -315,9 +315,9 @@ def main() -> None:
         vocabulario,
     )
 
-    benchmark = {"v6_base": {}, "v61_posicional": {}}
+    benchmark = {"v6_rollback": {}, "v61_posicional": {}}
     for comprimento, lote in ((73, 64), (512, 16)):
-        benchmark["v6_base"][str(comprimento)] = benchmark_pipeline(
+        benchmark["v6_rollback"][str(comprimento)] = benchmark_pipeline(
             modelo_base,
             teste.entradas,
             codigo_base.descritores,
@@ -354,7 +354,7 @@ def main() -> None:
             benchmark["v61_posicional"][comprimento][
                 "pipeline_completo"
             ]["tokens_por_segundo"]
-            >= benchmark["v6_base"][comprimento][
+            >= benchmark["v6_rollback"][comprimento][
                 "pipeline_completo"
             ]["tokens_por_segundo"]
             * 0.75
@@ -382,7 +382,7 @@ def main() -> None:
         "auditoria_codigo": codigo.auditoria(),
         "historico": historico,
         "tempo_treino_segundos": time.perf_counter() - inicio_treino,
-        "v6_base": {
+        "v6_rollback": {
             "qualidade": qualidade_base,
             "geracao_livre": geracao_base,
         },
@@ -394,9 +394,9 @@ def main() -> None:
         "benchmark": benchmark,
         "criterios": criterios,
         "decisao": (
-            "candidata_a_promocao"
+            "aprovada_para_base"
             if all(criterios.values())
-            else "nao_promover_manter_v6_base"
+            else "nao_promover_manter_v6_rollback"
         ),
         "interpretacao": (
             "A posicao senoidal preserva ordem sem pesos densos. O codigo "

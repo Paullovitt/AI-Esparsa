@@ -25,7 +25,7 @@ from treinar_v6 import avaliar, avaliar_geracao
 
 
 RAIZ = Path(__file__).resolve().parent
-CHECKPOINT_PADRAO = RAIZ / "modelos" / "v6_base.pt"
+CHECKPOINT_PADRAO = RAIZ / "modelos" / "v6_rollback.pt"
 
 
 def _filtrar_configuracao(
