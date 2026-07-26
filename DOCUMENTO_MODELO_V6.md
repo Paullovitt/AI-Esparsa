@@ -45,10 +45,10 @@ separadamente. A média da V6 foi:
 - PPL: `1,9196`;
 - acurácia de token: `77,41%`;
 - localização, recuperação e geração: `100%`;
-- PPL sem a FFN após ablação: `4,9902`.
+- PPL sem a FFN após ablação: `4,9899`.
 
-A suíte automatizada verifica causalidade, topologia COO, gradientes esparsos,
-determinismo, kernels CUDA dos componentes e recarga estrita do checkpoint.
+A suíte de nove testes verifica causalidade, topologia COO, gradientes esparsos,
+determinismo, recarga estrita do checkpoint e consistência da documentação.
 
 ## Estado de desempenho
 

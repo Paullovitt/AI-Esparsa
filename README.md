@@ -71,26 +71,23 @@ Protocolo: três sementes, cinco épocas e quinze checkpoints V6.
 | Localização da resposta | 100% |
 | Recuperação causal | 100% |
 | Geração em 72 prompts | 100% |
-| PPL com FFN removida | 4,9902 |
+| PPL com FFN removida | 4,9899 |
 
-A ablação confirma que a FFN participa efetivamente da previsão. Na comparação
-que originou a V6, o modelo sem FFN obteve PPL `2,1521` e a referência com FFN
-densa obteve `1,7154`. A V6 usa 9.621 parâmetros contra 24.645 da referência
-densa.
+A ablação confirma que a FFN participa efetivamente da previsão.
 
 ## Desempenho
 
 O caminho integrado atual usa `torch.sparse.mm`:
 
-| Entrada | V6 PyTorch |
-|---|---:|
-| 73 tokens, lote 64 | 1,07 M tokens/s |
-| 512 tokens, lote 16 | 1,15 M tokens/s |
+| Entrada | Média | Mínimo | Máximo |
+|---|---:|---:|---:|
+| 73 tokens, lote 64 | 0,897 M tokens/s | 0,873 M | 0,913 M |
+| 512 tokens, lote 16 | 1,068 M tokens/s | 1,062 M | 1,072 M |
 
-A qualidade e a compactação estão aprovadas. A velocidade integrada ainda não:
-o backend PyTorch esparso ficou entre 1,71x e 1,86x mais lento que o modelo sem
-FFN. O próximo passo de otimização é um kernel CUDA específico para estados
-contínuos, fundindo COO, Top-12, residual e LayerNorm.
+Os valores são médias de três sementes registradas em `v6_ultimo.json`. A
+qualidade e a compactação estão aprovadas. O próximo passo de otimização é um
+kernel CUDA específico para estados contínuos, fundindo COO, Top-12, residual e
+LayerNorm.
 
 ## Dependências
 
@@ -128,6 +125,8 @@ C:\Users\USER\Downloads\MeuProjetoIA\venv_cuda\Scripts\python.exe `
   -m unittest discover -s testes -p "test_*.py" -v
 ```
 
+A suíte atual possui nove testes automatizados.
+
 ## Exemplo de uso
 
 ```python
@@ -154,6 +153,8 @@ print(modelo.auditoria())
 - `treinar_v6.py`: treino oficial em três sementes e cinco épocas;
 - `testes/test_modelo_v6.py`: causalidade, topologia, ablação e gradientes;
 - `testes/test_checkpoint_v6.py`: contrato e recarga do checkpoint canônico.
+- `testes/test_documentacao_v6.py`: confere métricas documentadas contra o
+  relatório canônico.
 
 ## Estrutura
 

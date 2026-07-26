@@ -19,9 +19,10 @@ Ano: 2026
 - Localização da resposta: 100%.
 - Recuperação causal: 100%.
 - Geração controlada: 100%.
-- PPL sem FFN na ablação: 4,9902.
+- PPL sem FFN na ablação: 4,9899.
 - Qualidade e compactação: aprovadas.
 - Backend PyTorch integrado: reprovado em velocidade.
 - Próxima otimização: kernel CUDA da FFN textual contínua.
 - Relatório: `resultados/v6_ultimo.json`.
 - Documento técnico: `DOCUMENTO_MODELO_V6.md`.
+- Suíte automatizada: 9 testes aprovados.
