@@ -18,7 +18,7 @@ CHECKPOINT = RAIZ / "modelos" / "v6_rollback.pt"
 class TesteCheckpointV6(unittest.TestCase):
     def test_checkpoint_canonico_possui_metadados_v6(self) -> None:
         checkpoint = torch.load(
-            CHECKPOINT, map_location="cpu", weights_only=False
+            CHECKPOINT, map_location="cpu", weights_only=True
         )
         self.assertEqual(checkpoint["modelo"], "V6")
         self.assertEqual(checkpoint["nome"], "V6 Base")

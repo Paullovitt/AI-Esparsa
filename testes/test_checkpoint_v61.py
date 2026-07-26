@@ -19,7 +19,7 @@ class TesteCheckpointV61(unittest.TestCase):
         checkpoint = torch.load(
             CHECKPOINT_V61,
             map_location="cpu",
-            weights_only=False,
+            weights_only=True,
         )
         self.assertEqual(
             checkpoint["modelo"],

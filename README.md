@@ -192,6 +192,10 @@ O ambiente utilizado já está disponível em:
 
 Nenhuma dependência adicional precisa ser instalada.
 
+Os checkpoints são dicionários de tensores e metadados simples. Os carregadores
+usam `torch.load(..., weights_only=True)` para impedir desserialização arbitrária
+de objetos Python. Não use `weights_only=False` em arquivos não confiáveis.
+
 ## Execução
 
 Avaliar o rollback V6:
@@ -264,6 +268,7 @@ print(modelo.auditoria())
 
 ## Módulos principais
 
+- `AGENTS.md`: regras operacionais para agentes e segurança de checkpoints;
 - `src/modelo_v6.py`: arquitetura anterior preservada como rollback;
 - `src/modelo_v61.py`: modelo-base, posição fixa e roteamento temporal esparso;
 - `src/atencao_causal_texto.py`: corpus, descritores e atenção causal;
@@ -310,6 +315,7 @@ COMPARACAO_ATENCAO_DENSA_ESPARSA/
     test_v6_isolado.py
     test_v61_posicional.py
   DOCUMENTO_MODELO_V61.md
+  AGENTS.md
   executar_v6.py
   executar_v61.py
   testar_v6_isolado.py

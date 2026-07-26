@@ -40,7 +40,7 @@ def carregar_v61(
     checkpoint = torch.load(
         caminho,
         map_location=dispositivo,
-        weights_only=False,
+        weights_only=True,
     )
     if checkpoint.get("modelo") != "V6.1-base":
         raise ValueError("checkpoint nao pertence a V6.1 Base")

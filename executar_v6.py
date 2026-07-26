@@ -47,7 +47,7 @@ def carregar_v6(
     dispositivo: torch.device,
 ) -> tuple[ModeloV6, CodigoEsparsoCausal, dict[str, object]]:
     checkpoint = torch.load(
-        caminho, map_location=dispositivo, weights_only=False
+        caminho, map_location=dispositivo, weights_only=True
     )
     if checkpoint.get("modelo") != "V6":
         raise ValueError("o checkpoint informado nao pertence ao modelo V6")

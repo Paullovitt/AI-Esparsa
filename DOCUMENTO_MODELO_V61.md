@@ -148,6 +148,7 @@ Relatório: `resultados/v61_base_validacao.json`.
 
 - não sobrescrever `modelos/v61_base.pt`;
 - preservar `modelos/v6_rollback.pt` como controle histórico;
+- carregar checkpoints somente com `torch.load(..., weights_only=True)`;
 - todo experimento deve usar cinco épocas e salvar cada época;
 - comparar PPL, geração, recuperação, velocidade e VRAM;
 - qualquer backend novo deve provar equivalência com a V6.1 PyTorch;
