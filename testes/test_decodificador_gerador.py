@@ -4,7 +4,7 @@ import unittest
 
 import torch
 
-from src.decodificador_contextual import (
+from src.decodificador_gerador import (
     ConfiguracaoDecodificacao,
     aplicar_controle_repeticao,
     bloquear_proximo_ngram_repetido,
@@ -43,7 +43,7 @@ class ModeloFalso(torch.nn.Module):
         return logits, {}
 
 
-class TesteDecodificadorContextual(unittest.TestCase):
+class TesteDecodificadorGerador(unittest.TestCase):
     def test_bloqueia_bigrama_repetido(self) -> None:
         logits = torch.zeros(10)
         bloquear_proximo_ngram_repetido(logits, [5, 6, 5], 2)

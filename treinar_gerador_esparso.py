@@ -25,7 +25,7 @@ import torch
 from torch import Tensor
 from torch.nn import functional as F
 
-from src.decodificador_contextual import (
+from src.decodificador_gerador import (
     ConfiguracaoDecodificacao,
     gerar_controlado,
 )
@@ -895,8 +895,7 @@ def salvar_checkpoint(
             "dados_treino": tamanho_treino,
             "tamanho_lote": tamanho_lote,
             "passos_por_epoca": passos_por_epoca,
-            "modelo_oficial_preservado": True,
-            "modelo_v61_preservado": True,
+            "checkpoint_oficial_preservado": True,
         },
         caminho,
     )
@@ -1197,7 +1196,6 @@ def main() -> None:
         "checkpoint_final": str(
             (args.resultados / "epoca_05.pt").resolve()
         ),
-        "modelo_v61_preservado": True,
         "criterio_minimo_caracteres": MINIMO_CARACTERES_GERACAO,
         "limite": (
             "O resultado mede o dominio procedural treinado e nao comprova "

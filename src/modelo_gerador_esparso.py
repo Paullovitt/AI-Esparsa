@@ -1,8 +1,8 @@
 """Gerador causal com Q/K e FFN estruturalmente esparsas.
 
 A atencao seleciona os estados Top-K depois de projetar consultas e chaves por
-matrizes COO treinaveis. O modulo e a arquitetura-base para geracao
-condicionada longa; a V6.1 permanece preservada como controle historico.
+matrizes COO treinaveis. Este e o unico modelo mantido pelo projeto para
+geracao condicionada longa.
 
 Autor: Paulo Augusto
 Ano: 2026

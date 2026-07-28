@@ -12,7 +12,7 @@ from pathlib import Path
 
 import torch
 
-from src.decodificador_contextual import (
+from src.decodificador_gerador import (
     ConfiguracaoDecodificacao,
     gerar_controlado,
 )

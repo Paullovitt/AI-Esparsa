@@ -1,4 +1,4 @@
-"""Primitiva linear COO usada pela FFN do modelo V6.
+"""Primitiva linear COO usada pelo Gerador Esparso Coerente.
 
 Autor: Paulo Augusto
 Ano: 2026
@@ -43,6 +43,8 @@ class LinearBlocoEsparsa(nn.Module):
             self.valores,
             (self.saidas, self.entradas),
             device=self.valores.device,
+            # A topologia fixa e coberta pelos testes estruturais do modelo.
+            check_invariants=False,
         ).coalesce()
 
     def forward(self, entrada: Tensor) -> Tensor:

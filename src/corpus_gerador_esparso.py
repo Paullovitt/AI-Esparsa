@@ -1,8 +1,7 @@
 """Vocabulário e gerador procedural compartilhados pela base esparsa.
 
-O módulo contém apenas dados e geração determinística de texto. Separá-lo dos
-scripts experimentais evita que a base oficial importe arquiteturas históricas
-ou dependa de seus checkpoints.
+O módulo contém apenas dados e geração determinística de texto, mantendo o
+treinamento independente de fontes externas e artefatos auxiliares.
 
 Autor: Paulo Augusto
 Ano: 2026
@@ -106,7 +105,7 @@ def gerar_registro_curto(
     *,
     corrigir_gramatica: bool = True,
 ) -> dict[str, object]:
-    """Gera o relato curto legado sem importar o experimento contextual."""
+    """Gera um relato curto controlado para testes de composição."""
 
     aleatorio = random.Random(semente)
     (pessoa, pronome), (ajudante, pronome_ajudante) = aleatorio.sample(

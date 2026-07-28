@@ -2,7 +2,7 @@
 
 A promoção é deliberadamente separada do treino: primeiro o relatório precisa
 passar por revalidação e somente depois o checkpoint da época 5 é copiado. A
-V6.1 e o rollback V6 nunca são alterados.
+O checkpoint oficial nunca é sobrescrito automaticamente.
 
 Autor: Paulo Augusto
 Ano: 2026
@@ -58,7 +58,6 @@ def validar_promocao(
         "quinhentos_passos": (
             int(checkpoint.get("passos_por_epoca", 0)) == 500
         ),
-        "v61_preservada": bool(checkpoint.get("modelo_v61_preservado")),
         "revalidacao_aprovada": bool(
             relatorio.get("revalidacao", {}).get("aprovado")
         ),
@@ -111,9 +110,7 @@ def main() -> None:
             {
                 "checkpoint_base": str(DESTINO.resolve()),
                 "sha256": destino_hash,
-                "v61_preservada": str(
-                    (RAIZ / "modelos" / "v61_base.pt").resolve()
-                ),
+                "modelo": "Gerador Esparso Coerente",
             },
             ensure_ascii=False,
             indent=2,

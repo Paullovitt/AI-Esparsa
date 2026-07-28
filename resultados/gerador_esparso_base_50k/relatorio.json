@@ -247,39 +247,9 @@
     "vram_pico_mib": 95.568359375
   },
   "tempo_total_segundos": 1766.8575965000018,
-  "checkpoint_final": "C:\\Users\\USER\\Downloads\\AI\\AI-Esparsa\\resultados\\gerador_esparso_base_50k\\epoca_05.pt",
-  "modelo_v61_preservado": true,
+  "checkpoint_final": "resultados/gerador_esparso_base_50k/epoca_05.pt",
   "criterio_minimo_caracteres": 2000,
   "limite": "O resultado mede o dominio procedural treinado e nao comprova linguagem aberta geral.",
-  "comparacao_contextual_anterior": {
-    "entrada_benchmark": "lote 8 x 200 tokens, 8 repeticoes",
-    "contextual_anterior": {
-      "ppl_validacao": 6.445558535883263,
-      "acuracia_token": 0.39317530606928885,
-      "geracao_amostras": 1,
-      "recuperacao_campos_amostra": 0.4,
-      "consistencia_objeto_local_amostra": true,
-      "repeticao_trigramas_amostra": 0.0,
-      "desempenho": {
-        "tokens_por_segundo": 2168.9032012399553,
-        "latencia_ms": 737.7000500000577,
-        "vram_temporaria_mib": 14.0068359375
-      }
-    },
-    "gerador_novo": {
-      "geracao_amostras": 24,
-      "recuperacao_campos": 1.0,
-      "consistencia_objeto_local": 1.0,
-      "repeticao_trigramas_media": 0.01130919525705234,
-      "desempenho": {
-        "tokens_por_segundo": 92757.05116625306,
-        "latencia_ms": 17.24936250002429,
-        "vram_temporaria_mib": 11.75146484375
-      }
-    },
-    "razao_velocidade_novo_anterior": 42.76680080200174,
-    "observacao": "A geracao antiga possui somente uma amostra salva; qualidade livre nao e uma comparacao estatistica pareada."
-  },
   "revalidacao": {
     "checkpoint_epoca": 5,
     "weights_only": true,
@@ -300,7 +270,6 @@
     "modelo_base_ativo": "Gerador Esparso Coerente",
     "checkpoint_oficial": "modelos/gerador_esparso_base.pt",
     "sha256": "daba162081b351fe44bd9179c7a4f5ec374e691841d12774789916f846ac215f",
-    "v61_preservada": true,
     "autorizada_pelo_usuario": true
   }
 }

@@ -1,135 +1,27 @@
-# Status do Gerador Esparso Coerente Base
+# Status do Gerador Esparso Coerente
 
 Autor: Paulo Augusto  
 Ano: 2026
 
-- Modelo-base oficial: Gerador Esparso Coerente.
-- Checkpoint canônico: `modelos/gerador_esparso_base.pt`.
-- SHA-256 canônico:
-  `daba162081b351fe44bd9179c7a4f5ec374e691841d12774789916f846ac215f`.
-- Semente canônica: 20260728.
-- Época canônica: 5.
+- Arquiteturas mantidas: 1.
+- Modelo: Gerador Esparso Coerente.
+- Checkpoint oficial: `modelos/gerador_esparso_base.pt`.
+- SHA-256: `daba162081b351fe44bd9179c7a4f5ec374e691841d12774789916f846ac215f`.
 - Parâmetros: 163.667.
-- Atenção causal: Q/K COO esparsos, Top-32 e 25% de densidade.
+- Contexto máximo: 640 tokens.
+- Q/K: COO, Top-32 e 25% de densidade.
 - FFN: COO 128-384-128, Top-64 e 25% de densidade.
 - `nn.Linear` dentro do núcleo: zero.
-- Treino canônico: 50.000 relatos, cinco épocas, 500 passos por época.
-- PPL final revalidada: 1,0505.
+- Componentes densos: embedding/classificador compartilhado, LayerNorm,
+  residuais e escores temporários de atenção.
+- Dados: 50.000/1.000/1.000 relatos disjuntos.
+- Treino: cinco épocas, 500 passos por época e 2.500 passos totais.
+- PPL final: 1,0505.
 - Acurácia de token: 97,53%.
-- Geração validada: 24/24 relatos completos, mínimo de 2.802 caracteres.
-- Controle histórico: V6.1 preservada em `modelos/v61_base.pt`.
-- Modelo anterior: V6 preservada como rollback.
-- Checkpoint de rollback: `modelos/v6_rollback.pt`.
-- Semente histórica V6.1: 20260727.
-- Parâmetros da V6.1: 9.632.
-- Atenção da V6.1: Q/K esparsos, Top-24.
-- FFN da V6.1: COO 48-144-48, Top-12 e 25% de densidade.
-- `nn.Linear` dentro da FFN da V6.1: zero.
-- Treino V6.1: cinco épocas e cinco checkpoints preservados.
-- Validação V6.1: quatro sementes inéditas e 72 gerações por semente.
-- PPL média V6.1: 1,5317.
-- PPL de teste V6.1: 1,5308.
-- Acurácia de token média V6.1: 88,06%.
-- Localização da resposta: 100%.
-- Recuperação causal: 100%.
-- Geração livre exata média V6.1: 93,06%.
-- Tokens livres alinhados V6.1: 99,17%.
-- Locais livres V6.1: 99,54% média e 99,07% no pior caso.
-- Rollback V6, PPL média: 1,9196.
-- Rollback V6, melhor PPL: 1,9077.
-- Rollback V6, acurácia de token: 77,41%.
-- Rollback V6, geração livre exata: 0,00%.
-- Rollback V6, término em `EOS`: 61,11%.
-- Rollback V6, tokens alinhados: 41,07%.
-- Rollback V6, locais alinhados: 42,13%.
-- Rollback V6, PPL sem FFN: 4,9899.
-- Qualidade e compactação: aprovadas.
-- Backend PyTorch integrado: reprovado em velocidade.
-- Pipeline V6 completo, 73 tokens/lote 64: 0,555 M tokens/s.
-- Pipeline V6 completo, 512 tokens/lote 16: 0,296 M tokens/s.
-- Roteador aprendido sem mapas: Top-1 de 100%, PPL 2,6347, local 87,87% e
-  recuperação 99,95%.
-- Leitor Q/K adaptado: recuperação de 100%, mas PPL 3,6330.
-- Decisão do teste isolado antigo: não promover o roteador aprendido.
-- V6.1: posição senoidal fixa, três slots e dois papéis esparsos.
-- Pipeline V6.1, 73 tokens/lote 64: 0,536 M tokens/s, 104,05% da V6.
-- Pipeline V6.1, 512 tokens/lote 16: 0,279 M tokens/s, 99,72% da V6.
-- VRAM temporária da V6.1: igual à V6 nas médias pareadas.
-- Códigos temporais fixos: armazenados em cache, sem mudar as previsões.
-- Decisão V6.1: promovida oficialmente; V6 preservada como rollback.
-- Limite V6.1: slots e papéis ainda dependem da estrutura fixa do corpus.
-- Próximo experimento: aprender slots e papéis em sequências variáveis.
-- Próxima otimização: índice causal invertido para seleção de candidatos.
-- Relatório: `resultados/v6_ultimo.json`.
-- Relatório isolado: `resultados/teste_isolado_v6_ultimo.json`.
-- Relatório V6.1: `resultados/v61_base_validacao.json`.
-- Documento técnico: `DOCUMENTO_MODELO_V61.md`.
-- Suíte automatizada original da V6.1: 23 testes aprovados.
-- Experimento V7 variável: três blocos esparsos e zero linear densa interna.
-- V7 experimental: 92.331 parâmetros, PPL de teste 1,5988 e acurácia 81,89%.
-- V7 experimental gera três frases completas no domínio sintético treinado.
-- V7 não substitui a V6.1; linguagem aberta geral ainda não foi validada.
-
-- Suite automatizada após o primeiro experimento V7: 31 testes aprovados.
-- Camada contextual isolada: uma camada recorrente, sem atencao e sem FFN.
-- Estrutura: 8 bancos de 16 canais, Top-12, memoria rapida/lenta e pares.
-- Densidade estrutural equivalente das matrizes locais: 12,5%.
-- Parametros: 20.319 no modelo e 7.937 na camada.
-- Teste rapido: 360 treino, 72 validacao, 72 teste, cinco epocas.
-- Tempo por epoca: aproximadamente 4,8 s; total com avaliacoes: 61,64 s.
-- PPL inicial/final: 98,996 / 26,460; acuracia final: 10,80%.
-- Recuperacao livre de local: 0%; teacher forcing do local: 0%.
-- Decisao: aprendizado local confirmado, memoria factual ainda insuficiente.
-
-- Teste de slots contextuais: quatro slots por banco, leitura/escrita Top-2 e zero atencao sobre tokens.
-- Comparacao rapida 360/72/72 por cinco epocas: base PPL 26,460; slots PPL 28,264.
-- Slots: acuracia 10,51%, recuperacao livre do local 0% e local teacher-forced 0%.
-- Slots: preposicao teacher-forced 59,72%, contra 37,50% da camada base.
-- Slots: 27.400 parametros, 6.450 tokens/s e 21,50 MiB no forward.
-- Decisao dos slots: nao aprovada; melhorou o formato da resposta, mas nao reteve a associacao objeto-local.
-- Decodificador recuperador: 100% de respostas exatas e 0% de repeticao apos a resposta em 72 testes, sem novo treino.
-- Auditoria de geração longa: PPL baixa sob teacher forcing não previa a falha autorregressiva.
-- Causa: célula contextual insuficiente, atalhos de cópia/replay, bloqueio de n-gramas e erros gramaticais no corpus.
-- Gerador corrigido: promovido como base após autorização; a V6.1 foi preservada.
-- Arquitetura: três blocos, Q/K COO 25%, atenção causal Top-32 e FFN COO Top-64.
-- Parâmetros do gerador corrigido: 151.025; `nn.Linear` interna: zero.
-- Dados corrigidos: 9.000 treino, 600 validação e 600 teste, combinações disjuntas.
-- Treino: cinco épocas e cinco checkpoints separados, semente 20260811.
-- Checkpoint: `resultados/gerador_esparso_coerente/epoca_05.pt`.
-- PPL final: 1,1374; acurácia de token: 93,64%.
-- Geração livre: 24/24 textos completos, sete frases em média.
-- Recuperação dos cinco campos do pedido: 100%.
-- Consistência objeto-local e das ações: 100%.
-- Vazamento para pergunta/resposta: 0%.
-- Repetição média de trigramas: 0,42%.
-- Retentativa de baixa temperatura: necessária em 5/24 prompts.
-- Benchmark pareado 8 x 200: anterior 2.176 tokens/s; novo 86.720 tokens/s.
-- VRAM temporária pareada: anterior 14,01 MiB; novo 11,75 MiB.
-- Decisão histórica: experimento de 9 mil aprovado; promoção aguardava escala e autorização.
-- Limite Wikipedia: só 18,04% dos tokens eram vistos por época; PPL 144-153 não comprova linguagem geral.
-- Relatório: `resultados/gerador_esparso_coerente/relatorio.json`.
-- Suíte automatizada anterior à promoção: 61 testes aprovados.
-
-## Promoção 50k
-
-- Base ativa: Gerador Esparso Coerente.
-- Checkpoint: `modelos/gerador_esparso_base.pt`.
-- V6.1 histórica preservada: `modelos/v61_base.pt`.
-- Dados: 50.000/1.000/1.000 relatos extensos e disjuntos.
-- Treino: cinco épocas, 500 passos por época, lote 100 e 2.500 passos totais.
-- Semente: 20260728.
-- Vocabulário: 332; sequência máxima: 528; contexto: 640.
-- Parâmetros: 163.667; `nn.Linear` interna: zero.
-- PPL final revalidada: 1,0505; acurácia de token: 97,53%.
-- Geração: 24/24 aprovadas, 24 frases, mínimo 2.802 caracteres.
-- Média de tamanho: 2.829,9 caracteres e 488,5 tokens.
-- Recuperação dos cinco campos: 100%.
-- Consistência objeto-local e das ações: 100%.
-- Vazamento Q&A e uso de retentativa: 0%.
-- Repetição média de trigramas: 1,13%; frequência máxima: duas ocorrências.
-- Pico de treino: 1.897,5 MiB de VRAM.
-- Benchmark pareado 8 x 200: 92.757 tokens/s contra 2.169 tokens/s.
-- Razão de velocidade: 42,77x; VRAM temporária: 11,75 contra 14,01 MiB.
+- Geração livre: 24/24 textos aprovados.
+- Tamanho mínimo: 2.802 caracteres.
+- Recuperação dos campos: 100%.
+- Consistência objeto/local e ações: 100%.
+- Vazamento Q&A: 0%.
 - Relatório: `resultados/gerador_esparso_base_50k/relatorio.json`.
-- Todos os nove critérios de revalidação: aprovados.
-- Suíte automatizada atual: 65/65 testes aprovados.
+- Situação: aprovado e único modelo do projeto.

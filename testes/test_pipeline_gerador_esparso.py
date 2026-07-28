@@ -195,7 +195,6 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
             "epocas_planejadas": 5,
             "dados_treino": 50_000,
             "passos_por_epoca": 500,
-            "modelo_v61_preservado": True,
         }
         relatorio = {
             "revalidacao": {"aprovado": False, "criterios": {}},
@@ -214,8 +213,12 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
         self.assertEqual(checkpoint["epocas_planejadas"], 5)
         self.assertEqual(checkpoint["dados_treino"], 50_000)
         self.assertEqual(checkpoint["passos_por_epoca"], 500)
-        self.assertTrue(checkpoint["modelo_oficial_preservado"])
-        self.assertTrue(checkpoint["modelo_v61_preservado"])
+        self.assertTrue(
+            checkpoint.get(
+                "checkpoint_oficial_preservado",
+                checkpoint.get("modelo_oficial_preservado"),
+            )
+        )
         tokens = torch.tensor(
             [tokenizador.codificar("pedido: texto:", eos=False)]
         )
@@ -258,6 +261,34 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
         self.assertGreaterEqual(
             relatorio["geracao_livre"]["caracteres_minimos"],
             2_000,
+        )
+    def test_repositorio_mantem_um_unico_modelo(self) -> None:
+        """Impede a reintrodução acidental das arquiteturas removidas."""
+
+        implementacoes = sorted(
+            caminho.name
+            for caminho in (RAIZ / "src").glob("modelo_*.py")
+        )
+        checkpoints = sorted(
+            caminho.name
+            for caminho in (RAIZ / "modelos").glob("*.pt")
+        )
+        resultados = sorted(
+            caminho.name
+            for caminho in (RAIZ / "resultados").iterdir()
+            if caminho.is_dir()
+        )
+        self.assertEqual(
+            implementacoes,
+            ["modelo_gerador_esparso.py"],
+        )
+        self.assertEqual(
+            checkpoints,
+            ["gerador_esparso_base.pt"],
+        )
+        self.assertEqual(
+            resultados,
+            ["gerador_esparso_base_50k"],
         )
 
 
