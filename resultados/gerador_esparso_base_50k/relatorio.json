@@ -1,0 +1,306 @@
+{
+  "experimento": "gerador_esparso_base_50k",
+  "versao": "1.0.0",
+  "autor": "Paulo Augusto",
+  "ano": 2026,
+  "objetivo": "gerar relatos completos e coerentes preservando os campos fornecidos no pedido",
+  "dados": {
+    "treino": 50000,
+    "validacao": 1000,
+    "teste": 1000,
+    "combinacoes_disjuntas": true,
+    "sequencia_maxima": 528,
+    "relatos_extensos": true,
+    "frases_por_relato": 24
+  },
+  "epocas": 5,
+  "passos_por_epoca": 500,
+  "passos_totais": 2500,
+  "tamanho_lote": 100,
+  "tokenizador": {
+    "tipo": "palavras_e_pontuacao",
+    "vocabulario": 332,
+    "unk_nas_divisoes": 0
+  },
+  "configuracao": {
+    "dimensao": 128,
+    "camadas": 3,
+    "top_k_atencao": 32,
+    "fan_in_qk": 32,
+    "especialistas": 384,
+    "fan_in_ffn": 32,
+    "fan_out_ffn": 48,
+    "top_k_ffn": 64,
+    "maximo_contexto": 640
+  },
+  "arquitetura": {
+    "modelo": "gerador-esparso-coerente-base",
+    "parametros": 163667,
+    "camadas": 3,
+    "atencao_causal_top_k": 32,
+    "qk_coo": true,
+    "conexoes_qk": 24576,
+    "densidade_qk": 0.25,
+    "ffn_coo": true,
+    "conexoes_ffn": 92160,
+    "residuais": true,
+    "normalizacao": true,
+    "lineares_densas_internas": 0,
+    "classificador_denso": true,
+    "pesos_embedding_saida_amarrados": true
+  },
+  "avaliacao_inicial": {
+    "perda": 5.8025149003521035,
+    "ppl": 331.13127579208344,
+    "acuracia_token": 0.0011086855958802773,
+    "tokens": 523142.0
+  },
+  "historico": [
+    {
+      "epoca": 1,
+      "perda_treino_ponderada": 0.9185562101294926,
+      "validacao": {
+        "perda": 0.06284359369160883,
+        "ppl": 1.0648602753412049,
+        "acuracia_token": 0.970105630975911,
+        "tokens": 523142.0
+      },
+      "tempo_segundos": 318.1743123999986,
+      "vram_pico_mib": 1898.33203125
+    },
+    {
+      "epoca": 2,
+      "perda_treino_ponderada": 0.04016057579173482,
+      "validacao": {
+        "perda": 0.05567295324677023,
+        "ppl": 1.0572518564018578,
+        "acuracia_token": 0.9728486720622699,
+        "tokens": 523142.0
+      },
+      "tempo_segundos": 333.0547676000024,
+      "vram_pico_mib": 1897.51220703125
+    },
+    {
+      "epoca": 3,
+      "perda_treino_ponderada": 0.03508035602798748,
+      "validacao": {
+        "perda": 0.050315943940501574,
+        "ppl": 1.0516032915835165,
+        "acuracia_token": 0.9748615098768595,
+        "tokens": 523142.0
+      },
+      "tempo_segundos": 342.07151879999947,
+      "vram_pico_mib": 1897.51220703125
+    },
+    {
+      "epoca": 4,
+      "perda_treino_ponderada": 0.03397896720267389,
+      "validacao": {
+        "perda": 0.04956593471141081,
+        "ppl": 1.0508148751062618,
+        "acuracia_token": 0.9753221878572166,
+        "tokens": 523142.0
+      },
+      "tempo_segundos": 338.13918879999983,
+      "vram_pico_mib": 1897.51220703125
+    },
+    {
+      "epoca": 5,
+      "perda_treino_ponderada": 0.03362542892641089,
+      "validacao": {
+        "perda": 0.049457593698119966,
+        "ppl": 1.0507010349248034,
+        "acuracia_token": 0.9751386812758295,
+        "tokens": 523142.0
+      },
+      "tempo_segundos": 331.8639856000009,
+      "vram_pico_mib": 1897.51220703125
+    }
+  ],
+  "avaliacao_final": {
+    "perda": 0.04929130305079227,
+    "ppl": 1.0505263276960495,
+    "acuracia_token": 0.9753365799955658,
+    "tokens": 523204.0
+  },
+  "geracao_livre": {
+    "amostras_avaliadas": 24,
+    "taxa_completude": 1.0,
+    "taxa_aprovacao": 1.0,
+    "taxa_vazamento_pergunta": 0.0,
+    "taxa_uso_retentativa": 0.0,
+    "consistencia_objeto_local": 1.0,
+    "consistencia_acoes": 1.0,
+    "tokens_medios": 488.5,
+    "caracteres_minimos": 2802,
+    "caracteres_medios": 2829.9166666666665,
+    "frases_medias": 24.0,
+    "recuperacao_campos_pedido": 1.0,
+    "repeticao_trigramas_media": 0.01130919525705234,
+    "frequencia_maxima_trigrama": 2,
+    "exemplos": [
+      {
+        "pedido": "Pedido: escreva um relato sobre bruno, com ajuda de diego, para organizar uma pequena mostra cultural. Inclua o documento no corredor e o problema um atraso no transporte. Texto:",
+        "texto": "no inicio da tarde, bruno recebeu a responsabilidade de organizar uma pequena mostra cultural e chamou diego para participar do trabalho. os dois revisaram o objetivo da atividade, dividiram as etapas e combinaram registrar cada decisão importante. bruno explicou as prioridades, enquanto diego, disposto a colaborar, preparou uma lista com os materiais disponíveis. antes do início, a dupla inspecionou o espaço, verificou as condições de segurança e deixou livre a área de circulação. o primeiro passo foi conferir cada item com cuidado, pois essa medida facilitaria todas as atividades seguintes. logo depois, diego começou a registrar as mudancas em uma lista, e bruno acompanhou o resultado para evitar qualquer troca indevida. para proteger o item principal, bruno colocou o documento no corredor e mostrou a posição a diego. o ajudante confirmou a localização, anotou que ele estava guardado corretamente e manteve o acesso desimpedido. em outra parte do ambiente, o livro foi levado para a sala, sem interferir no local reservado para o documento. durante a execução, o transporte chegou depois do horario previsto, criando uma pausa que não estava prevista no cronograma. a ocorrência exigiu calma, porque uma resposta apressada poderia comprometer os materiais e aumentar o atraso. bruno protegeu os itens próximos, avisou a equipe e conferiu novamente se o documento permanecia no corredor. diego analisou a causa da interrupção, comparou as alternativas e propôs um caminho seguro para a continuidade. depois de conversarem, os dois reorganizaram o cronograma sem mudar a responsabilidade de cada participante. na retomada, eles decidiram mover as caixas para uma area segura e documentaram o motivo da escolha para que ninguém perdesse o contexto. em seguida, bruno ficou responsável por revisar a ordem das tarefas, enquanto diego verificava o andamento das etapas já concluídas. a comunicação constante permitiu corrigir uma pequena diferença na lista antes que ela afetasse o restante do plano. quando a situação se estabilizou, ele voltou ao ponto de armazenamento e observou que o documento seguia no corredor. diego fez uma segunda conferência e declarou que a informação registrada correspondia ao que estava no ambiente. a dupla então concluiu as etapas pendentes, revisou os materiais utilizados e recolheu apenas o que não seria mais necessário. antes de encerrar, bruno explicou como o problema foi controlado e quais cuidados evitaram novas perdas durante a atividade. no relatório final, ele confirmou que o documento continuava no corredor, exatamente como havia sido planejado. diego releu as anotações, concordou com a conclusão e acrescentou as medidas preventivas adotadas pela equipe. com a tarefa concluída, bruno e diego deixaram o espaço organizado e entregaram um registro completo do trabalho realizado.",
+        "tokens": 489,
+        "caracteres": 2840,
+        "frases": 24,
+        "cobertura_palavras_chave": 1.0,
+        "trigramas_repetidos": 0.010266940451745366,
+        "frequencia_maxima_trigrama": 2,
+        "local_do_objeto_consistente": true,
+        "acoes_consistentes": true,
+        "vazou_bloco_pergunta": false,
+        "completo": true,
+        "aprovado": true,
+        "retentativas": 0
+      },
+      {
+        "pedido": "Pedido: escreva um relato sobre bruno, com ajuda de paulo, para planejar uma horta comunitaria. Inclua o relatorio na cozinha e o problema uma lista incompleta. Texto:",
+        "texto": "pela manha, bruno recebeu a responsabilidade de planejar uma horta comunitaria e chamou paulo para participar do trabalho. os dois revisaram o objetivo da atividade, dividiram as etapas e combinaram registrar cada decisão importante. bruno explicou as prioridades, enquanto paulo, disposto a colaborar, preparou uma lista com os materiais disponíveis. antes do início, a dupla inspecionou o espaço, verificou as condições de segurança e deixou livre a área de circulação. o primeiro passo foi revisar a ordem das tarefas, pois essa medida facilitaria todas as atividades seguintes. logo depois, paulo começou a registrar as mudancas em uma lista, e bruno acompanhou o resultado para evitar qualquer troca indevida. para proteger o item principal, bruno colocou o relatorio na cozinha e mostrou a posição a paulo. o ajudante confirmou a localização, anotou que ele estava guardado corretamente e manteve o acesso desimpedido. em outra parte do ambiente, o documento foi levado para o escritorio, sem interferir no local reservado para o relatorio. durante a execução, a lista incompleta confundiu a separacao dos itens, criando uma pausa que não estava prevista no cronograma. a ocorrência exigiu calma, porque uma resposta apressada poderia comprometer os materiais e aumentar o atraso. bruno protegeu os itens próximos, avisou a equipe e conferiu novamente se o relatorio permanecia na cozinha. paulo analisou a causa da interrupção, comparou as alternativas e propôs um caminho seguro para a continuidade. depois de conversarem, os dois reorganizaram o cronograma sem mudar a responsabilidade de cada participante. na retomada, eles decidiram mover as caixas para uma area segura e documentaram o motivo da escolha para que ninguém perdesse o contexto. em seguida, bruno ficou responsável por revisar a ordem das tarefas, enquanto paulo verificava o andamento das etapas já concluídas. a comunicação constante permitiu corrigir uma pequena diferença na lista antes que ela afetasse o restante do plano. quando a situação se estabilizou, ele voltou ao ponto de armazenamento e observou que o relatorio seguia na cozinha. paulo fez uma segunda conferência e declarou que a informação registrada correspondia ao que estava no ambiente. a dupla então concluiu as etapas pendentes, revisou os materiais utilizados e recolheu apenas o que não seria mais necessário. antes de encerrar, bruno explicou como o problema foi controlado e quais cuidados evitaram novas perdas durante a atividade. no relatório final, ele confirmou que o relatorio continuava na cozinha, exatamente como havia sido planejado. paulo releu as anotações, concordou com a conclusão e acrescentou as medidas preventivas adotadas pela equipe. com a tarefa concluída, bruno e paulo deixaram o espaço organizado e entregaram um registro completo do trabalho realizado.",
+        "tokens": 487,
+        "caracteres": 2832,
+        "frases": 24,
+        "cobertura_palavras_chave": 1.0,
+        "trigramas_repetidos": 0.01855670103092788,
+        "frequencia_maxima_trigrama": 2,
+        "local_do_objeto_consistente": true,
+        "acoes_consistentes": true,
+        "vazou_bloco_pergunta": false,
+        "completo": true,
+        "aprovado": true,
+        "retentativas": 0
+      },
+      {
+        "pedido": "Pedido: escreva um relato sobre marina, com ajuda de renata, para montar uma exposicao de fotografias. Inclua a pasta no armario e o problema uma lista incompleta. Texto:",
+        "texto": "no inicio da tarde, marina recebeu a responsabilidade de montar uma exposicao de fotografias e chamou renata para participar do trabalho. as duas revisaram o objetivo da atividade, dividiram as etapas e combinaram registrar cada decisão importante. marina explicou as prioridades, enquanto renata, disposta a colaborar, preparou uma lista com os materiais disponíveis. antes do início, a dupla inspecionou o espaço, verificou as condições de segurança e deixou livre a área de circulação. o primeiro passo foi revisar a ordem das tarefas, pois essa medida facilitaria todas as atividades seguintes. logo depois, renata começou a separar os materiais por categoria, e marina acompanhou o resultado para evitar qualquer troca indevida. para proteger o item principal, marina colocou a pasta no armario e mostrou a posição a renata. a ajudante confirmou a localização, anotou que ela estava guardada corretamente e manteve o acesso desimpedido. em outra parte do ambiente, o livro foi levado para a sala, sem interferir no local reservado para a pasta. durante a execução, a lista incompleta confundiu a separacao dos itens, criando uma pausa que não estava prevista no cronograma. a ocorrência exigiu calma, porque uma resposta apressada poderia comprometer os materiais e aumentar o atraso. marina protegeu os itens próximos, avisou a equipe e conferiu novamente se a pasta permanecia no armario. renata analisou a causa da interrupção, comparou as alternativas e propôs um caminho seguro para a continuidade. depois de conversarem, as duas reorganizaram o cronograma sem mudar a responsabilidade de cada participante. na retomada, elas decidiram mover as caixas para uma area segura e documentaram o motivo da escolha para que ninguém perdesse o contexto. em seguida, marina ficou responsável por registrar as mudancas em uma lista, enquanto renata verificava o andamento das etapas já concluídas. a comunicação constante permitiu corrigir uma pequena diferença na lista antes que ela afetasse o restante do plano. quando a situação se estabilizou, ela voltou ao ponto de armazenamento e observou que a pasta seguia no armario. renata fez uma segunda conferência e declarou que a informação registrada correspondia ao que estava no ambiente. a dupla então concluiu as etapas pendentes, revisou os materiais utilizados e recolheu apenas o que não seria mais necessário. antes de encerrar, marina explicou como o problema foi controlado e quais cuidados evitaram novas perdas durante a atividade. no relatório final, ela confirmou que a pasta continuava no armario, exatamente como havia sido planejado. renata releu as anotações, concordou com a conclusão e acrescentou as medidas preventivas adotadas pela equipe. com a tarefa concluída, marina e renata deixaram o espaço organizado e entregaram um registro completo do trabalho realizado.",
+        "tokens": 490,
+        "caracteres": 2839,
+        "frases": 24,
+        "cobertura_palavras_chave": 1.0,
+        "trigramas_repetidos": 0.010245901639344246,
+        "frequencia_maxima_trigrama": 2,
+        "local_do_objeto_consistente": true,
+        "acoes_consistentes": true,
+        "vazou_bloco_pergunta": false,
+        "completo": true,
+        "aprovado": true,
+        "retentativas": 0
+      },
+      {
+        "pedido": "Pedido: escreva um relato sobre renata, com ajuda de beatriz, para planejar uma horta comunitaria. Inclua o caderno no escritorio e o problema a falta de energia. Texto:",
+        "texto": "no inicio da tarde, renata recebeu a responsabilidade de planejar uma horta comunitaria e chamou beatriz para participar do trabalho. as duas revisaram o objetivo da atividade, dividiram as etapas e combinaram registrar cada decisão importante. renata explicou as prioridades, enquanto beatriz, disposta a colaborar, preparou uma lista com os materiais disponíveis. antes do início, a dupla inspecionou o espaço, verificou as condições de segurança e deixou livre a área de circulação. o primeiro passo foi revisar a ordem das tarefas, pois essa medida facilitaria todas as atividades seguintes. logo depois, beatriz começou a conferir cada item com cuidado, e renata acompanhou o resultado para evitar qualquer troca indevida. para proteger o item principal, renata colocou o caderno no escritorio e mostrou a posição a beatriz. a ajudante confirmou a localização, anotou que ele estava guardado corretamente e manteve o acesso desimpedido. em outra parte do ambiente, o documento foi levado para a sala, sem interferir no local reservado para o caderno. durante a execução, a falta de energia interrompeu parte do trabalho, criando uma pausa que não estava prevista no cronograma. a ocorrência exigiu calma, porque uma resposta apressada poderia comprometer os materiais e aumentar o atraso. renata protegeu os itens próximos, avisou a equipe e conferiu novamente se o caderno permanecia no escritorio. beatriz analisou a causa da interrupção, comparou as alternativas e propôs um caminho seguro para a continuidade. depois de conversarem, as duas reorganizaram o cronograma sem mudar a responsabilidade de cada participante. na retomada, elas decidiram registrar as mudancas em uma lista e documentaram o motivo da escolha para que ninguém perdesse o contexto. em seguida, renata ficou responsável por mover as caixas para uma area segura, enquanto beatriz verificava o andamento das etapas já concluídas. a comunicação constante permitiu corrigir uma pequena diferença na lista antes que ela afetasse o restante do plano. quando a situação se estabilizou, ela voltou ao ponto de armazenamento e observou que o caderno seguia no escritorio. beatriz fez uma segunda conferência e declarou que a informação registrada correspondia ao que estava no ambiente. a dupla então concluiu as etapas pendentes, revisou os materiais utilizados e recolheu apenas o que não seria mais necessário. antes de encerrar, renata explicou como o problema foi controlado e quais cuidados evitaram novas perdas durante a atividade. no relatório final, ela confirmou que o caderno continuava no escritorio, exatamente como havia sido planejado. beatriz releu as anotações, concordou com a conclusão e acrescentou as medidas preventivas adotadas pela equipe. com a tarefa concluída, renata e beatriz deixaram o espaço organizado e entregaram um registro completo do trabalho realizado.",
+        "tokens": 489,
+        "caracteres": 2863,
+        "frases": 24,
+        "cobertura_palavras_chave": 1.0,
+        "trigramas_repetidos": 0.010266940451745366,
+        "frequencia_maxima_trigrama": 2,
+        "local_do_objeto_consistente": true,
+        "acoes_consistentes": true,
+        "vazou_bloco_pergunta": false,
+        "completo": true,
+        "aprovado": true,
+        "retentativas": 0
+      },
+      {
+        "pedido": "Pedido: escreva um relato sobre carla, com ajuda de diego, para montar uma exposicao de fotografias. Inclua o livro na sala e o problema uma janela quebrada. Texto:",
+        "texto": "antes do anoitecer, carla recebeu a responsabilidade de montar uma exposicao de fotografias e chamou diego para participar do trabalho. os dois revisaram o objetivo da atividade, dividiram as etapas e combinaram registrar cada decisão importante. carla explicou as prioridades, enquanto diego, disposto a colaborar, preparou uma lista com os materiais disponíveis. antes do início, a dupla inspecionou o espaço, verificou as condições de segurança e deixou livre a área de circulação. o primeiro passo foi revisar a ordem das tarefas, pois essa medida facilitaria todas as atividades seguintes. logo depois, diego começou a conferir cada item com cuidado, e carla acompanhou o resultado para evitar qualquer troca indevida. para proteger o item principal, carla colocou o livro na sala e mostrou a posição a diego. o ajudante confirmou a localização, anotou que ele estava guardado corretamente e manteve o acesso desimpedido. em outra parte do ambiente, o livro foi levado para o deposito, sem interferir no local reservado para o livro. durante a execução, a janela quebrada exigiu uma mudanca no plano, criando uma pausa que não estava prevista no cronograma. a ocorrência exigiu calma, porque uma resposta apressada poderia comprometer os materiais e aumentar o atraso. carla protegeu os itens próximos, avisou a equipe e conferiu novamente se o livro permanecia na sala. diego analisou a causa da interrupção, comparou as alternativas e propôs um caminho seguro para a continuidade. depois de conversarem, os dois reorganizaram o cronograma sem mudar a responsabilidade de cada participante. na retomada, eles decidiram limpar o espaco antes da montagem e documentaram o motivo da escolha para que ninguém perdesse o contexto. em seguida, carla ficou responsável por registrar as mudancas em uma lista, enquanto diego verificava o andamento das etapas já concluídas. a comunicação constante permitiu corrigir uma pequena diferença na lista antes que ela afetasse o restante do plano. quando a situação se estabilizou, ela voltou ao ponto de armazenamento e observou que o livro seguia na sala. diego fez uma segunda conferência e declarou que a informação registrada correspondia ao que estava no ambiente. a dupla então concluiu as etapas pendentes, revisou os materiais utilizados e recolheu apenas o que não seria mais necessário. antes de encerrar, carla explicou como o problema foi controlado e quais cuidados evitaram novas perdas durante a atividade. no relatório final, ela confirmou que o livro continuava na sala, exatamente como havia sido planejado. diego releu as anotações, concordou com a conclusão e acrescentou as medidas preventivas adotadas pela equipe. com a tarefa concluída, carla e diego deixaram o espaço organizado e entregaram um registro completo do trabalho realizado.",
+        "tokens": 488,
+        "caracteres": 2802,
+        "frases": 24,
+        "cobertura_palavras_chave": 1.0,
+        "trigramas_repetidos": 0.010288065843621408,
+        "frequencia_maxima_trigrama": 2,
+        "local_do_objeto_consistente": true,
+        "acoes_consistentes": true,
+        "vazou_bloco_pergunta": false,
+        "completo": true,
+        "aprovado": true,
+        "retentativas": 0
+      },
+      {
+        "pedido": "Pedido: escreva um relato sobre tiago, com ajuda de lucas, para planejar uma horta comunitaria. Inclua o caderno na gaveta e o problema a falta de energia. Texto:",
+        "texto": "antes do anoitecer, tiago recebeu a responsabilidade de planejar uma horta comunitaria e chamou lucas para participar do trabalho. os dois revisaram o objetivo da atividade, dividiram as etapas e combinaram registrar cada decisão importante. tiago explicou as prioridades, enquanto lucas, disposto a colaborar, preparou uma lista com os materiais disponíveis. antes do início, a dupla inspecionou o espaço, verificou as condições de segurança e deixou livre a área de circulação. o primeiro passo foi revisar a ordem das tarefas, pois essa medida facilitaria todas as atividades seguintes. logo depois, lucas começou a limpar o espaco antes da montagem, e tiago acompanhou o resultado para evitar qualquer troca indevida. para proteger o item principal, tiago colocou o caderno na gaveta e mostrou a posição a lucas. o ajudante confirmou a localização, anotou que ele estava guardado corretamente e manteve o acesso desimpedido. em outra parte do ambiente, o livro foi levado para a mesa, sem interferir no local reservado para o caderno. durante a execução, a falta de energia interrompeu parte do trabalho, criando uma pausa que não estava prevista no cronograma. a ocorrência exigiu calma, porque uma resposta apressada poderia comprometer os materiais e aumentar o atraso. tiago protegeu os itens próximos, avisou a equipe e conferiu novamente se o caderno permanecia na gaveta. lucas analisou a causa da interrupção, comparou as alternativas e propôs um caminho seguro para a continuidade. depois de conversarem, os dois reorganizaram o cronograma sem mudar a responsabilidade de cada participante. na retomada, eles decidiram mover as caixas para uma area segura e documentaram o motivo da escolha para que ninguém perdesse o contexto. em seguida, tiago ficou responsável por conferir cada item com cuidado, enquanto lucas verificava o andamento das etapas já concluídas. a comunicação constante permitiu corrigir uma pequena diferença na lista antes que ela afetasse o restante do plano. quando a situação se estabilizou, ele voltou ao ponto de armazenamento e observou que o caderno seguia na gaveta. lucas fez uma segunda conferência e declarou que a informação registrada correspondia ao que estava no ambiente. a dupla então concluiu as etapas pendentes, revisou os materiais utilizados e recolheu apenas o que não seria mais necessário. antes de encerrar, tiago explicou como o problema foi controlado e quais cuidados evitaram novas perdas durante a atividade. no relatório final, ele confirmou que o caderno continuava na gaveta, exatamente como havia sido planejado. lucas releu as anotações, concordou com a conclusão e acrescentou as medidas preventivas adotadas pela equipe. com a tarefa concluída, tiago e lucas deixaram o espaço organizado e entregaram um registro completo do trabalho realizado.",
+        "tokens": 488,
+        "caracteres": 2816,
+        "frases": 24,
+        "cobertura_palavras_chave": 1.0,
+        "trigramas_repetidos": 0.010288065843621408,
+        "frequencia_maxima_trigrama": 2,
+        "local_do_objeto_consistente": true,
+        "acoes_consistentes": true,
+        "vazou_bloco_pergunta": false,
+        "completo": true,
+        "aprovado": true,
+        "retentativas": 0
+      }
+    ],
+    "falhas": []
+  },
+  "recuperacao": {
+    "campos_do_pedido": 1.0
+  },
+  "desempenho": {
+    "tokens_por_segundo": 142303.86577062416,
+    "latencia_ms": 71.95869166692621,
+    "vram_pico_mib": 95.568359375
+  },
+  "tempo_total_segundos": 1766.8575965000018,
+  "checkpoint_final": "C:\\Users\\USER\\Downloads\\AI\\AI-Esparsa\\resultados\\gerador_esparso_base_50k\\epoca_05.pt",
+  "modelo_v61_preservado": true,
+  "criterio_minimo_caracteres": 2000,
+  "limite": "O resultado mede o dominio procedural treinado e nao comprova linguagem aberta geral.",
+  "comparacao_contextual_anterior": {
+    "entrada_benchmark": "lote 8 x 200 tokens, 8 repeticoes",
+    "contextual_anterior": {
+      "ppl_validacao": 6.445558535883263,
+      "acuracia_token": 0.39317530606928885,
+      "geracao_amostras": 1,
+      "recuperacao_campos_amostra": 0.4,
+      "consistencia_objeto_local_amostra": true,
+      "repeticao_trigramas_amostra": 0.0,
+      "desempenho": {
+        "tokens_por_segundo": 2168.9032012399553,
+        "latencia_ms": 737.7000500000577,
+        "vram_temporaria_mib": 14.0068359375
+      }
+    },
+    "gerador_novo": {
+      "geracao_amostras": 24,
+      "recuperacao_campos": 1.0,
+      "consistencia_objeto_local": 1.0,
+      "repeticao_trigramas_media": 0.01130919525705234,
+      "desempenho": {
+        "tokens_por_segundo": 92757.05116625306,
+        "latencia_ms": 17.24936250002429,
+        "vram_temporaria_mib": 11.75146484375
+      }
+    },
+    "razao_velocidade_novo_anterior": 42.76680080200174,
+    "observacao": "A geracao antiga possui somente uma amostra salva; qualidade livre nao e uma comparacao estatistica pareada."
+  },
+  "revalidacao": {
+    "checkpoint_epoca": 5,
+    "weights_only": true,
+    "criterios": {
+      "ppl_maxima_1_20": true,
+      "completude_100": true,
+      "recuperacao_100": true,
+      "consistencia_objeto_local_100": true,
+      "consistencia_acoes_100": true,
+      "repeticao_trigramas_media_ate_1_5_porcento": true,
+      "nenhum_trigrama_repetido_mais_de_duas_vezes": true,
+      "todas_geracoes_com_2_mil_caracteres": true,
+      "sem_vazamento_pergunta": true
+    },
+    "aprovado": true
+  },
+  "promocao": {
+    "modelo_base_ativo": "Gerador Esparso Coerente",
+    "checkpoint_oficial": "modelos/gerador_esparso_base.pt",
+    "sha256": "daba162081b351fe44bd9179c7a4f5ec374e691841d12774789916f846ac215f",
+    "v61_preservada": true,
+    "autorizada_pelo_usuario": true
+  }
+}
