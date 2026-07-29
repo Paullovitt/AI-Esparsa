@@ -166,18 +166,27 @@ rejeitado. Uma menção a outro objeto em outro local não causa falso positivo.
 | Uso de retentativa | 12,5% |
 | Vazamento Q&A | 0% |
 | Pico de VRAM no treino | 1.898,33 MiB |
-| Forward paralelo, lote 16 × contexto 640 | 117.980,83 tokens/s |
+
+### Desempenho da última revalidação
+
+<!-- metricas-desempenho:inicio -->
+| Medição | Resultado |
+|---|---:|
+| Forward paralelo, lote 16 × contexto 640 | 111.834,05 tokens/s |
 | Pico de VRAM no forward | 88,46 MiB |
-| Geração autorregressiva real | 97,37 tokens/s |
-| Latência até o primeiro token | 5,57 ms |
-| Tempo do relato completo | 5,02 s |
+| Geração autorregressiva real | 94,48 tokens/s |
+| Latência até o primeiro token | 5,58 ms |
+| Tempo do relato completo | 5,18 s |
+<!-- metricas-desempenho:fim -->
 
 O relatório completo está em
 `resultados/gerador_esparso_base_50k/relatorio.json`.
 
 O throughput de forward mede sequências completas em paralelo e não representa
 a velocidade percebida durante a geração. Por isso, o relatório mantém as duas
-medições separadas.
+medições separadas. As linhas de desempenho acima são atualizadas
+automaticamente por `validar_gerador_esparso.py`; o `relatorio.json` é a fonte
+única dos valores.
 
 ## Principais módulos
 
@@ -215,10 +224,12 @@ AI-Esparsa/
     camada_linear_esparsa.py
     corpus_gerador_esparso.py
     decodificador_gerador.py
+    documentacao_metricas.py
     modelo_gerador_esparso.py
     tokenizador_palavras.py
   testes/
     test_decodificador_gerador.py
+    test_documentacao_metricas.py
     test_gpu_gerador.py
     test_modelo_gerador_esparso.py
     test_pipeline_gerador_esparso.py

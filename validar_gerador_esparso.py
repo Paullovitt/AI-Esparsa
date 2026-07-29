@@ -16,6 +16,7 @@ import torch
 from executar_gerador_esparso import (
     carregar_gerador,
 )
+from src.documentacao_metricas import sincronizar_metricas_documentacao
 from src.tokenizador_palavras import TokenizadorPalavras
 from treinar_gerador_esparso import (
     RESULTADOS_PADRAO,
@@ -202,6 +203,8 @@ def main() -> None:
         json.dumps(relatorio, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+    # O relatório é a fonte única para medições que variam entre execuções.
+    sincronizar_metricas_documentacao(relatorio, Path(__file__).parent)
     print(
         json.dumps(
             {

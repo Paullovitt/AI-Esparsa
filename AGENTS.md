@@ -19,6 +19,7 @@ Regras obrigatorias:
 - salvar cada epoca em checkpoint separado;
 - comparar PPL, geracao livre, recuperacao, velocidade e VRAM;
 - separar throughput de forward e velocidade autorregressiva percebida;
+- tratar o relatorio JSON como fonte unica e sincronizar metricas documentais;
 - salvar no relatorio todas as 24 geracoes usadas na aprovacao;
 - rejeitar prompts publicos fora do formato ou com tokens desconhecidos;
 - qualquer kernel novo deve provar equivalencia com a referencia PyTorch;

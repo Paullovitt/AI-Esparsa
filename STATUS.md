@@ -31,9 +31,11 @@ Ano: 2026
 - Vazamento Q&A: 0%.
 - Validador: 2.0.0, com varredura por cláusulas e suíte adversarial aprovada.
 - Entrada pública: formato fechado e rejeição explícita de tokens `<unk>`.
-- Forward paralelo: 117.980,83 tokens/s e 88,46 MiB de VRAM.
-- Geração autorregressiva: 97,37 tokens/s, primeiro token em 5,57 ms e
-  relato completo em 5,02 s.
+<!-- metricas-desempenho:inicio -->
+- Forward paralelo: 111.834,05 tokens/s e 88,46 MiB de VRAM.
+- Geração autorregressiva: 94,48 tokens/s, primeiro token em 5,58 ms e
+  relato completo em 5,18 s.
+<!-- metricas-desempenho:fim -->
 - Ambiente revalidado: Windows 11, Python 3.14.0, PyTorch 2.11.0+cu128,
   CUDA 12.8 e NVIDIA GeForce RTX 3050.
 - Relatório: `resultados/gerador_esparso_base_50k/relatorio.json`.

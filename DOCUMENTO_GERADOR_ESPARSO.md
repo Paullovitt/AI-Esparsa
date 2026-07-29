@@ -113,11 +113,13 @@ distratores e não reprovam um texto válido.
 
 A revalidação separa métricas com significados diferentes:
 
-- forward paralelo, lote 16 e contexto 640: 117.980,83 tokens/s,
-  86,79 ms e pico de 88,46 MiB;
-- geração autorregressiva de um relato: 97,37 tokens/s;
-- latência até o primeiro token: 5,57 ms;
-- tempo total para 489 tokens e 2.840 caracteres: 5,02 s.
+<!-- metricas-desempenho:inicio -->
+- forward paralelo, lote 16 e contexto 640: 111.834,05 tokens/s,
+  91,56 ms e pico de 88,46 MiB;
+- geração autorregressiva de um relato: 94,48 tokens/s;
+- latência até o primeiro token: 5,58 ms;
+- tempo total para 489 tokens e 2.840 caracteres: 5,18 s.
+<!-- metricas-desempenho:fim -->
 
 O teste oficial foi executado em Windows 11, Python 3.14.0,
 PyTorch 2.11.0+cu128, CUDA 12.8 e NVIDIA GeForce RTX 3050. `pyproject.toml` e

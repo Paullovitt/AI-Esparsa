@@ -119,8 +119,8 @@
     }
   ],
   "avaliacao_final": {
-    "perda": 0.049291299434440244,
-    "ppl": 1.0505263238969764,
+    "perda": 0.04929130235085317,
+    "ppl": 1.050526326960745,
     "acuracia_token": 0.9753365799955658,
     "tokens": 523204.0
   },
@@ -589,17 +589,17 @@
   },
   "desempenho_forward": {
     "tipo": "forward_paralelo_lote_16_contexto_completo",
-    "tokens_por_segundo": 117980.83406753694,
-    "latencia_ms": 86.79375833313922,
+    "tokens_por_segundo": 111834.05021046402,
+    "latencia_ms": 91.56424166637105,
     "vram_pico_mib": 88.46044921875
   },
   "desempenho_autorregressivo": {
     "tipo": "geracao_autorregressiva_relato_completo",
     "tokens_gerados": 489.0,
-    "tempo_total_segundos": 5.02231860000029,
-    "latencia_primeiro_token_ms": 5.572899997787317,
-    "latencia_media_token_ms": 10.270590184049672,
-    "tokens_por_segundo": 97.36538816951433,
+    "tempo_total_segundos": 5.1756200000018,
+    "latencia_primeiro_token_ms": 5.577000003540888,
+    "latencia_media_token_ms": 10.584089979553783,
+    "tokens_por_segundo": 94.4814341083445,
     "caracteres_gerados": 2840.0,
     "frases_geradas": 24.0
   },
