@@ -38,6 +38,11 @@ Regras obrigatorias:
 - rejeitar prompts publicos fora do formato ou com tokens desconhecidos;
 - qualquer kernel novo deve provar equivalencia com a referencia PyTorch;
 - atualizar README, documento tecnico, status e testes apos mudancas;
+- quando o usuario pedir para subir modelos ou atualizar o GitHub, a tarefa
+  somente termina depois que a branch padrao `main` receber o estado validado,
+  for enviada ao remoto e o README remoto padrao for conferido;
+- uma branch auxiliar publicada isoladamente nao conta como atualizacao do
+  GitHub concluida;
 - usar o ambiente CUDA existente sem instalar dependencias desnecessarias;
 - outra arquitetura alem da baseline so pode ser adicionada com autorizacao
   explicita.
