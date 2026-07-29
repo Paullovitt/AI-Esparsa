@@ -1,6 +1,6 @@
 {
   "experimento": "comparacao_denso_50k",
-  "versao": "1.1.0",
+  "versao": "1.2.0",
   "autor": "Paulo Augusto",
   "ano": 2026,
   "papel": "baseline_densa_experimental",
@@ -130,9 +130,9 @@
     }
   ],
   "avaliacao_final": {
-    "perda": 0.04804706808986672,
-    "ppl": 1.049220038945348,
-    "acuracia_token": 0.9758736554001881,
+    "perda": 0.04804715348243706,
+    "ppl": 1.049220128540948,
+    "acuracia_token": 0.9758660101986988,
     "tokens": 523204.0
   },
   "geracao_livre": {
@@ -540,17 +540,19 @@
   },
   "desempenho_forward": {
     "tipo": "forward_paralelo_lote_16_contexto_completo",
-    "tokens_por_segundo": 1537708.7789920259,
-    "latencia_ms": 6.659258332850489,
-    "vram_pico_mib": 122.2109375
+    "tokens_por_segundo": 1730921.2001279595,
+    "latencia_ms": 5.915924999499111,
+    "vram_pico_mib": 43.1748046875
   },
   "desempenho_autorregressivo": {
     "tipo": "geracao_autorregressiva_relato_completo",
     "tokens_gerados": 487.0,
-    "tempo_total_segundos": 0.9616166000050725,
-    "latencia_primeiro_token_ms": 2.0703999980469234,
-    "latencia_media_token_ms": 1.974572073932387,
-    "tokens_por_segundo": 506.43884475104846,
+    "tempo_total_segundos": 0.91062399999646,
+    "latencia_primeiro_token_ms": 1.9845999995595776,
+    "latencia_media_token_ms": 1.869864476378768,
+    "tokens_por_segundo": 534.7981164584869,
+    "cache_incremental_utilizado": 0.0,
+    "vram_pico_mib": 12.3271484375,
     "caracteres_gerados": 2841.0,
     "frases_geradas": 24.0
   },

@@ -1,7 +1,7 @@
 """Alias de execução explícita da V6.2-base com cache causal incremental.
 
-O checkpoint oficial e lido com ``weights_only=True`` e nunca modificado. A
-V6.2 reutiliza exatamente os pesos e a topologia esparsa da V6.1.
+O checkpoint oficial é lido com ``weights_only=True`` e nunca modificado. A
+V6.2 reutiliza exatamente os pesos e a topologia esparsa de referência.
 
 Autor: Paulo Augusto
 Ano: 2026

@@ -4,7 +4,7 @@
   "versao_runtime": "6.2",
   "autor": "Paulo Augusto",
   "ano": 2026,
-  "objetivo": "reduzir o custo autorregressivo preservando integralmente pesos, topologia esparsa e saida da V6.1",
+  "objetivo": "reduzir o custo autorregressivo preservando integralmente pesos, topologia esparsa e saída da referência",
   "ambiente": {
     "python": "3.14.0",
     "sistema": "Windows-11-10.0.26200-SP0",

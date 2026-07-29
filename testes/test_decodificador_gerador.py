@@ -7,6 +7,9 @@ import torch
 from src.decodificador_gerador import (
     ConfiguracaoDecodificacao,
     aplicar_controle_repeticao,
+    aplicar_concordancia_de_genero,
+    aplicar_gramatica_de_acoes,
+    aplicar_objeto_de_apoio_distinto,
     bloquear_proximo_ngram_repetido,
     gerar_controlado,
 )
@@ -85,6 +88,70 @@ class ModeloFalsoComCache(ModeloFalso):
         return self._logits(novo_token, cache["gerados"]), cache
 
 
+class TokenizadorConcordanciaGeracao:
+    id_para_token = (
+        "<pad>",
+        "<bos>",
+        "<eos>",
+        "resposta",
+        ":",
+        "o",
+        "relatorio",
+        "foi",
+        "levado",
+        "levada",
+        ".",
+    )
+    token_para_id = {
+        token: indice for indice, token in enumerate(id_para_token)
+    }
+    pad_id = 0
+    bos_id = 1
+    eos_id = 2
+
+    def codificar(
+        self,
+        texto: str,
+        *,
+        bos: bool = True,
+        eos: bool = True,
+    ) -> list[int]:
+        ids = [self.token_para_id["resposta"], self.token_para_id[":"]]
+        return ([self.bos_id] if bos else []) + ids + (
+            [self.eos_id] if eos else []
+        )
+
+    def decodificar(self, ids: list[int]) -> str:
+        tokens = [
+            self.id_para_token[indice]
+            for indice in ids
+            if indice not in {self.pad_id, self.bos_id, self.eos_id}
+        ]
+        return " ".join(tokens).replace(" :", ":").replace(" .", ".")
+
+
+class ModeloConcordanciaGeracao(torch.nn.Module):
+    class Configuracao:
+        maximo_contexto = 32
+
+    configuracao = Configuracao()
+
+    def forward(self, tokens: torch.Tensor):
+        gerados = tokens.shape[1] - 3
+        sequencia = [5, 6, 7, 9, 10]
+        logits = torch.full(
+            (1, tokens.shape[1], 11),
+            -20.0,
+            device=tokens.device,
+        )
+        proximo = sequencia[min(gerados, len(sequencia) - 1)]
+        logits[0, -1, proximo] = 20.0
+        if gerados == 3:
+            # A forma masculina é a segunda opção aprendida.
+            logits[0, -1, 8] = 19.0
+        return logits, {}
+
+
 class TesteDecodificadorGerador(unittest.TestCase):
     def test_bloqueia_bigrama_repetido(self) -> None:
         logits = torch.zeros(10)
@@ -103,6 +170,89 @@ class TesteDecodificadorGerador(unittest.TestCase):
             ),
         )
         self.assertTrue(torch.isfinite(logits).all())
+
+    def test_concordancia_bloqueia_flexao_incompativel(self) -> None:
+        class TokenizadorConcordancia:
+            id_para_token = (
+                "<pad>",
+                "o",
+                "a",
+                "relatorio",
+                "camera",
+                "foi",
+                "levado",
+                "levada",
+            )
+
+        tokenizador = TokenizadorConcordancia()
+        logits = torch.zeros(len(tokenizador.id_para_token))
+        aplicar_concordancia_de_genero(
+            logits,
+            [1, 3, 5],
+            tokenizador,
+        )
+        self.assertTrue(torch.isneginf(logits[7]))
+        self.assertTrue(torch.isfinite(logits[6]))
+
+        logits = torch.zeros(len(tokenizador.id_para_token))
+        aplicar_concordancia_de_genero(
+            logits,
+            [2, 4, 5],
+            tokenizador,
+        )
+        self.assertTrue(torch.isneginf(logits[6]))
+        self.assertTrue(torch.isfinite(logits[7]))
+
+    def test_gramatica_completa_acao_no_encaixe_correto(self) -> None:
+        class TokenizadorAcao:
+            id_para_token = (
+                "o",
+                "primeiro",
+                "passo",
+                "foi",
+                "mover",
+                "as",
+                "caixas",
+                "para",
+                "uma",
+                "area",
+                "lista",
+            )
+
+        tokenizador = TokenizadorAcao()
+        logits = torch.zeros(len(tokenizador.id_para_token))
+        aplicar_gramatica_de_acoes(
+            logits,
+            list(range(9)),
+            tokenizador,
+        )
+        self.assertTrue(torch.isfinite(logits[9]))
+        self.assertTrue(torch.isneginf(logits[10]))
+
+    def test_objeto_de_apoio_nao_repete_o_principal(self) -> None:
+        class TokenizadorObjeto:
+            id_para_token = (
+                "em",
+                "outra",
+                "parte",
+                "do",
+                "ambiente",
+                ",",
+                "o",
+                "relatorio",
+                "documento",
+            )
+
+        tokenizador = TokenizadorObjeto()
+        logits = torch.zeros(len(tokenizador.id_para_token))
+        aplicar_objeto_de_apoio_distinto(
+            logits,
+            list(range(7)),
+            tokenizador,
+            "relatorio",
+        )
+        self.assertTrue(torch.isneginf(logits[7]))
+        self.assertTrue(torch.isfinite(logits[8]))
 
     def test_para_na_primeira_frase_completa(self) -> None:
         metricas: dict[str, float] = {}
@@ -153,6 +303,37 @@ class TesteDecodificadorGerador(unittest.TestCase):
         self.assertEqual(texto, "resposta: na cozinha.")
         self.assertEqual(modelo.prefills, 0)
         self.assertGreater(modelo.forwards, 0)
+
+    def test_separa_modelo_puro_e_restricao_instrumentada(self) -> None:
+        tokenizador = TokenizadorConcordanciaGeracao()
+        modelo = ModeloConcordanciaGeracao()
+        configuracao_pura = ConfiguracaoDecodificacao(
+            maximo_tokens=5,
+            aplicar_controle_de_repeticao=False,
+            aplicar_restricoes_de_dominio=False,
+        )
+        puro = gerar_controlado(
+            modelo,
+            tokenizador,
+            "Resposta:",
+            torch.device("cpu"),
+            configuracao=configuracao_pura,
+        )
+        self.assertIn("o relatorio foi levada", puro)
+
+        intervencoes: dict[str, object] = {}
+        restrito = gerar_controlado(
+            modelo,
+            tokenizador,
+            "Resposta:",
+            torch.device("cpu"),
+            configuracao=ConfiguracaoDecodificacao(maximo_tokens=5),
+            metricas_decodificacao=intervencoes,
+        )
+        self.assertIn("o relatorio foi levado", restrito)
+        concordancia = intervencoes["por_regra"]["concordancia_genero"]
+        self.assertEqual(concordancia["tokens_bloqueados"], 1)
+        self.assertEqual(concordancia["mudancas_argmax"], 1)
 
 
 if __name__ == "__main__":

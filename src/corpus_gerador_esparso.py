@@ -209,6 +209,7 @@ def gerar_registro_curto(
         "palavras_chave": [
             pessoa,
             ajudante,
+            tarefa,
             objeto,
             local,
             problema_curto,

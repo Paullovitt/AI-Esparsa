@@ -14,18 +14,24 @@ from pathlib import Path
 import torch
 
 from comparar_esparso_denso import (
+    CHECKPOINT_ESPARSO_OFICIAL,
     construir_comparacao,
     gerar_markdown_comparacao,
 )
+from executar_gerador_esparso import carregar_gerador
 from src.modelo_gerador_denso import (
     ConfiguracaoGeradorDenso,
     ModeloGeradorDenso,
 )
+from src.modelo_gerador_esparso_v62 import ModeloGeradorEsparsoV62
 from src.tokenizador_palavras import TokenizadorPalavras
+from src.versao import VERSAO_PROJETO
 from treinar_gerador_esparso import (
     QUANTIDADES_PADRAO,
     avaliar_geracao_livre,
     avaliar_linguagem,
+    benchmark,
+    benchmark_autorregressivo,
     codificar_registros,
     gerar_divisoes_gerador,
 )
@@ -118,6 +124,17 @@ def main() -> None:
         dispositivo,
         quantidade=24,
     )
+    desempenho_denso = benchmark(
+        modelo,
+        tokenizador.tamanho,
+        dispositivo,
+    )
+    autorregressivo_denso = benchmark_autorregressivo(
+        modelo,
+        tokenizador,
+        str(teste[0]["pedido"]),
+        dispositivo,
+    )
     relatorio_denso = json.loads(
         relatorio_denso_caminho.read_text(encoding="utf-8")
     )
@@ -162,10 +179,68 @@ def main() -> None:
         "criterios": criterios,
         "aprovado": all(criterios.values()),
     }
+    relatorio_denso["versao"] = VERSAO_PROJETO
+    relatorio_denso["avaliacao_final"] = linguagem
+    relatorio_denso["geracao_livre"] = geracao
+    relatorio_denso["desempenho_forward"] = desempenho_denso
+    relatorio_denso["desempenho_autorregressivo"] = (
+        autorregressivo_denso
+    )
+    relatorio_denso_caminho.write_text(
+        json.dumps(relatorio_denso, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    modelo_esparso, tokenizador_esparso, _ = carregar_gerador(
+        CHECKPOINT_ESPARSO_OFICIAL,
+        dispositivo,
+        classe_modelo=ModeloGeradorEsparsoV62,
+    )
+    if tokenizador_esparso.id_para_token != tokenizador.id_para_token:
+        raise RuntimeError("tokenizador esparso diverge da baseline densa")
+    linguagem_esparsa = avaliar_linguagem(
+        modelo_esparso,
+        codificados_teste,
+        tokenizador.pad_id,
+        100,
+        dispositivo,
+    )
+    geracao_esparsa = avaliar_geracao_livre(
+        modelo_esparso,
+        tokenizador,
+        teste,
+        dispositivo,
+        quantidade=24,
+    )
+    desempenho_esparso = benchmark(
+        modelo_esparso,
+        tokenizador.tamanho,
+        dispositivo,
+    )
+    autorregressivo_esparso = benchmark_autorregressivo(
+        modelo_esparso,
+        tokenizador,
+        str(teste[0]["pedido"]),
+        dispositivo,
+    )
     relatorio_esparso = json.loads(
         (args.resultados / "esparso" / "relatorio.json").read_text(
             encoding="utf-8"
         )
+    )
+    relatorio_esparso["versao"] = VERSAO_PROJETO
+    relatorio_esparso["arquitetura"] = modelo_esparso.auditoria()
+    relatorio_esparso["avaliacao_final"] = linguagem_esparsa
+    relatorio_esparso["geracao_livre"] = geracao_esparsa
+    relatorio_esparso["desempenho_forward"] = desempenho_esparso
+    relatorio_esparso["desempenho_autorregressivo"] = (
+        autorregressivo_esparso
+    )
+    (
+        args.resultados / "esparso" / "relatorio.json"
+    ).write_text(
+        json.dumps(relatorio_esparso, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
     )
     comparacao = construir_comparacao(
         relatorio_esparso,

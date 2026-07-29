@@ -1,7 +1,7 @@
 """Runtime-base V6.2 com cache causal exato para inferencia.
 
 Os pesos, a topologia COO, a atencao Top-K, a FFN, os residuais e as
-normalizacoes continuam sendo os da V6.1. A diferenca desta versao e somente
+normalizações continuam sendo os da referência. A diferença desta versão é somente
 o caminho incremental: chaves e valores causais ja calculados sao mantidos
 por camada durante a geracao.
 
@@ -334,7 +334,7 @@ class ModeloGeradorEsparsoV62(ModeloGeradorEsparso):
             raise ValueError("quantidade de camadas do cache e invalida")
 
         if cache.comprimento >= cache.capacidade:
-            # A V6.1 reinicia as posicoes ao deslizar a janela. Refazer o
+            # A referência reinicia as posições ao deslizar a janela. Refazer o
             # prefill preserva exatamente esse contrato no raro overflow.
             janela = torch.cat(
                 (

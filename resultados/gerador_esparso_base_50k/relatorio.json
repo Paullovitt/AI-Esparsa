@@ -119,8 +119,8 @@
     }
   ],
   "avaliacao_final": {
-    "perda": 0.04929137001163295,
-    "ppl": 1.050526398040178,
+    "perda": 0.04929137024494598,
+    "ppl": 1.0505263982852795,
     "acuracia_token": 0.9753365799955658,
     "tokens": 523204.0
   },
@@ -535,7 +535,7 @@
   "criterio_minimo_caracteres": 2000,
   "limite": "O resultado mede o dominio procedural treinado e nao comprova linguagem aberta geral.",
   "revalidacao": {
-    "versao_validador": "2.0.0",
+    "versao_validador": "3.0.0",
     "checkpoint_epoca": 5,
     "weights_only": true,
     "criterios": {
@@ -596,18 +596,19 @@
   },
   "desempenho_forward": {
     "tipo": "forward_paralelo_lote_16_contexto_completo",
-    "tokens_por_segundo": 144957.06201473103,
-    "latencia_ms": 70.64160833336548,
+    "tokens_por_segundo": 145417.74347278467,
+    "latencia_ms": 70.41781666703173,
     "vram_pico_mib": 83.42138671875
   },
   "desempenho_autorregressivo": {
     "tipo": "geracao_autorregressiva_relato_completo",
     "tokens_gerados": 489.0,
-    "tempo_total_segundos": 1.5524309999964316,
-    "latencia_primeiro_token_ms": 4.499900001974311,
-    "latencia_media_token_ms": 3.1747055214650954,
-    "tokens_por_segundo": 314.9898449600169,
+    "tempo_total_segundos": 1.5610861999957706,
+    "latencia_primeiro_token_ms": 4.6314999999594875,
+    "latencia_media_token_ms": 3.192405316964766,
+    "tokens_por_segundo": 313.2434326825289,
     "cache_incremental_utilizado": 1.0,
+    "vram_pico_mib": 16.21875,
     "caracteres_gerados": 2840.0,
     "frases_geradas": 24.0
   },

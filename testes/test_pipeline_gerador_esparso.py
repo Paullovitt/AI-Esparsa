@@ -16,6 +16,7 @@ from treinar_gerador_esparso import (
     _medir_continuacao,
     acoes_consistentes,
     codificar_registros,
+    concordancia_de_genero_consistente,
     extrair_campos_pedido,
     gerar_divisoes_gerador,
     gerar_registro_extenso,
@@ -23,7 +24,7 @@ from treinar_gerador_esparso import (
     problema_recuperado,
     validar_prompt_publico,
 )
-from src.corpus_gerador_esparso import PESSOAS
+from src.corpus_gerador_esparso import PESSOAS, TAREFAS
 
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -47,6 +48,7 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
             [
                 "bruno",
                 "tiago",
+                "preparar uma feira de ciencias",
                 "caixa",
                 "estante",
                 "uma janela quebrada",
@@ -134,13 +136,30 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
         self.assertIn("disposta a colaborar", textos)
         self.assertIn("disposto a colaborar", textos)
         for registro in treino:
-            principal = str(registro["palavras_chave"][2])
+            principal = str(registro["palavras_chave"][3])
             correspondencia = re.search(
                 r"Em outra parte do ambiente, (?:o|a) (\w+) foi",
                 str(registro["historia"]),
             )
             self.assertIsNotNone(correspondencia)
             self.assertNotEqual(principal, correspondencia.group(1))
+
+    def test_avaliador_rejeita_concordancia_incorreta(self) -> None:
+        self.assertFalse(
+            concordancia_de_genero_consistente(
+                "o relatorio foi levada para o deposito."
+            )
+        )
+        self.assertFalse(
+            concordancia_de_genero_consistente(
+                "a camera foi levado para a sala."
+            )
+        )
+        self.assertTrue(
+            concordancia_de_genero_consistente(
+                "o relatorio foi levado e a camera foi levada."
+            )
+        )
 
     def test_prompt_oov_ou_fora_do_formato_e_rejeitado(self) -> None:
         treino, _, _ = gerar_divisoes_gerador(
@@ -179,12 +198,12 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
         self.assertTrue(acoes_consistentes(historia))
         self.assertTrue(
             local_do_objeto_consistente(
-                palavras[2],
                 palavras[3],
+                palavras[4],
                 historia,
             )
         )
-        self.assertTrue(problema_recuperado(palavras[4], historia))
+        self.assertTrue(problema_recuperado(palavras[5], historia))
         self.assertNotIn(" a camera foi levado ", historia.lower())
         self.assertNotIn(" a chave foi levado ", historia.lower())
         self.assertNotIn(" a caixa foi levado ", historia.lower())
@@ -192,6 +211,26 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
         self.assertNotIn(" a maquete foi levado ", historia.lower())
         self.assertNotIn(" levado na ", historia.lower())
         self.assertNotIn(" levado no ", historia.lower())
+
+    def test_avaliador_rejeita_tarefa_trocada(self) -> None:
+        registro = gerar_registro_extenso(40_000_000)
+        palavras = [str(item) for item in registro["palavras_chave"]]
+        tarefa_errada = next(
+            tarefa for tarefa in TAREFAS if tarefa != palavras[2]
+        )
+        historia_errada = str(registro["historia"]).replace(
+            palavras[2],
+            tarefa_errada,
+        )
+        tokenizador = TokenizadorPalavras([str(registro["texto"])])
+
+        medidas = _medir_continuacao(
+            tokenizador,
+            historia_errada,
+            palavras,
+        )
+
+        self.assertLess(medidas["cobertura_palavras_chave"], 1.0)
 
     def test_resposta_em_prosa_nao_e_vazamento_de_qa(self) -> None:
         treino, _, _ = gerar_divisoes_gerador(
@@ -330,8 +369,8 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
             self.assertIsNotNone(campos)
             self.assertTrue(
                 local_do_objeto_consistente(
-                    campos[2],
                     campos[3],
+                    campos[4],
                     str(exemplo["texto"]),
                 )
             )
@@ -343,7 +382,7 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
         )
         self.assertEqual(
             relatorio["revalidacao"]["versao_validador"],
-            "2.0.0",
+            "3.0.0",
         )
         validar_promocao(
             torch.load(
@@ -354,10 +393,10 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
             relatorio,
         )
 
-    def test_repositorio_mantem_um_checkpoint_oficial_e_um_controle(
+    def test_repositorio_mantem_somente_v62_v73_e_denso(
         self,
     ) -> None:
-        """Distingue runtime sem pesos de um novo modelo treinado."""
+        """Impede a reintrodução das versões experimentais descartadas."""
 
         implementacoes = sorted(
             caminho.name
@@ -378,11 +417,15 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
                 "modelo_gerador_denso.py",
                 "modelo_gerador_esparso.py",
                 "modelo_gerador_esparso_v62.py",
+                "modelo_gerador_esparso_v73.py",
             ],
         )
         self.assertEqual(
             checkpoints,
-            ["gerador_esparso_base.pt"],
+            [
+                "gerador_esparso_base.pt",
+                "gerador_esparso_v73_base.pt",
+            ],
         )
         self.assertIn("gerador_esparso_base_50k", resultados)
         self.assertTrue(
@@ -391,6 +434,7 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
                     "gerador_esparso_base_50k",
                     "comparacao_esparso_denso_50k",
                     "v62_base_runtime",
+                    "v73_base",
                 }
             )
         )
@@ -401,6 +445,16 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
                 ).glob("*.pt")
             )
         )
+        checkpoint_v73 = torch.load(
+            RAIZ / "modelos" / "gerador_esparso_v73_base.pt",
+            map_location="cpu",
+            weights_only=True,
+        )
+        self.assertEqual(
+            checkpoint_v73["modelo"],
+            "gerador-esparso-v73-base",
+        )
+        self.assertFalse(checkpoint_v73["treinado_em_bf16"])
 
 
 if __name__ == "__main__":

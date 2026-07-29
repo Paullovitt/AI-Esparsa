@@ -1,7 +1,7 @@
 """Valida e mede o runtime-base V6.2 com cache causal incremental e CSR.
 
 O experimento reutiliza estritamente os pesos oficiais, nao treina, nao cria
-checkpoint e nao altera ``modelos/gerador_esparso_base.pt``. A V6.1 sem cache
+checkpoint e nao altera ``modelos/gerador_esparso_base.pt``. A referência sem cache
 e executada pelo mesmo objeto para isolar somente o caminho de inferencia.
 
 Autor: Paulo Augusto
@@ -81,7 +81,7 @@ def carregar_v62(
     TokenizadorPalavras,
     dict[str, object],
 ]:
-    """Reconstroi a V6.2 usando somente os tensores seguros da V6.1."""
+    """Reconstrói a V6.2 usando somente tensores seguros da referência."""
 
     checkpoint = torch.load(
         caminho,
@@ -133,7 +133,7 @@ def validar_equivalencia_logits(
     tokenizador: TokenizadorPalavras,
     dispositivo: torch.device,
 ) -> dict[str, object]:
-    """Compara prefill e passos incrementais com o forward V6.1 herdado."""
+    """Compara prefill e passos incrementais com o forward de referência."""
 
     gerador = torch.Generator(device=dispositivo).manual_seed(620_2026)
     diferencas_prefill: list[dict[str, float | int]] = []
@@ -385,7 +385,7 @@ def main() -> None:
         "ano": 2026,
         "objetivo": (
             "reduzir o custo autorregressivo preservando integralmente "
-            "pesos, topologia esparsa e saida da V6.1"
+            "pesos, topologia esparsa e saída da referência"
         ),
         "ambiente": _ambiente(dispositivo),
         "checkpoint": {

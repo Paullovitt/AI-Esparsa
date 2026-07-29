@@ -1,233 +1,315 @@
-# Documento técnico do Gerador Esparso Coerente
+# Documento técnico — AI-Esparsa
 
 Autor: Paulo Augusto
 Ano: 2026
 
-## Escopo
+## Escopo vigente
 
-O Gerador Esparso Coerente é a única arquitetura oficial deste repositório.
-Seu objetivo é produzir relatos procedurais longos condicionados por campos
-explícitos de um pedido. Uma baseline densa existe exclusivamente como
-controle experimental autorizado e não altera o checkpoint oficial.
+O repositório mantém somente:
 
-O runtime-base oficial é a V6.2. Ele reutiliza os pesos treinados e acrescenta
-cache causal incremental, cache linear CSR e cache dos gates escalares.
+- V6.2, base estável oficial;
+- V7.3, base de desenvolvimento ativa;
+- baseline densa, controle experimental.
 
-Checkpoint oficial:
+Versões intermediárias e o candidato treinado em BF16 foram descartados.
 
-`modelos/gerador_esparso_base.pt`
+Checkpoints:
 
-## Topologia
+```text
+modelos/gerador_esparso_base.pt
+modelos/gerador_esparso_v73_base.pt
+resultados/comparacao_esparso_denso_50k/denso/epoca_05.pt
+```
 
-O modelo possui dimensão 128, três blocos causais, contexto máximo de 640
-tokens e 163.667 parâmetros. Cada bloco contém:
+O checkpoint V6.2 não pode ser sobrescrito. A V7.3 atual é FP32, possui duas
+épocas históricas e não é elegível para promoção formal. Um futuro candidato
+promovível precisa completar cinco épocas controladas.
 
-1. projeções Q/K treináveis em COO;
-2. seleção causal Top-32 processada em blocos de 32 consultas;
-3. residual e LayerNorm;
-4. FFN COO 128-384-128 com GELU e Top-64;
-5. residual com gate treinável e LayerNorm.
+## Dados e contrato
 
-As projeções Q/K e FFN têm 25% de densidade estrutural. Não existe `nn.Linear`
-densa no núcleo. O embedding/classificador compartilhado é uma matriz
-treinável densa; normalização, residuais, softmax e escores temporários também
-operam sobre tensores densos. Por isso, o modelo é descrito como tendo núcleo
-estruturalmente esparso, não como 100% esparso.
-
-Cada bloco de consultas é comparado com todo o prefixo causal e conserva os
-mesmos 32 maiores escores da referência que materializava
-`[lote, tempo, tempo]`. Testes numéricos confirmam equivalência dentro de
-tolerância de `1e-6`. A memória de escores passa a ser
-`O(lote × bloco × tempo)`, mas a quantidade total de produtos Q/K continua
-aproximadamente quadrática no tempo.
-
-As matrizes COO mantêm os valores treináveis na ordem original do checkpoint,
-ordenam os índices uma única vez e informam ao PyTorch que o tensor já está
-coalescido. Em inferência, a representação esparsa é reutilizada enquanto a
-versão do parâmetro não muda; treino, troca de dispositivo ou alteração dos
-pesos invalidam esse cache.
-
-## Controle denso equivalente
-
-A baseline usa dimensão 88, três blocos, FFN 88-160-88, Q/K densos e atenção
-causal densa por `scaled_dot_product_attention`. Residual, LayerNorm, posição
-senoidal, classificador amarrado e contexto 640 são preservados. Ela possui
-163.003 parâmetros contra 163.667 do esparso, diferença de 0,41%.
-
-Essa escolha controla o orçamento de parâmetros, mas não a largura: o modelo
-esparso opera em dimensão 128. O kernel denso oficial do PyTorch foi usado para
-evitar uma baseline artificialmente lenta.
-
-## Causalidade
-
-A máscara impede acesso a tokens futuros. A seleção Top-K ocorre somente entre
-posições causais válidas. O teste automatizado compara prefixos antes e depois
-de alterações em tokens futuros.
-
-## Dados e tokenização
-
-O corpus procedural é gerado deterministicamente e dividido sem sobreposição:
+O corpus procedural é determinístico:
 
 - treino: 50.000 relatos;
-- validação: 1.000 relatos;
-- teste: 1.000 relatos;
-- 24 frases por relato extenso;
-- vocabulário: 332 tokens;
-- sequência máxima observada: 528 tokens.
+- validação: 1.000;
+- teste: 1.000;
+- 24 frases por relato;
+- contexto máximo: 640 tokens;
+- seed: 20260728.
 
-O tokenizador separa palavras e pontuação e é reconstruído pelo vocabulário
-persistido no checkpoint.
-
-## Contrato de entrada
-
-O executor aceita o formato:
+Formato público:
 
 ```text
 Pedido: escreva um relato sobre <pessoa>, com ajuda de <ajudante>, para <tarefa>. Inclua <objeto> no <local> e o problema <problema>. Texto:
 ```
 
-Todos os tokens precisam existir no vocabulário do checkpoint. Formato
-incompleto, campos invertidos e palavras desconhecidas são rejeitados antes da
-inferência, em vez de serem convertidos silenciosamente para `<unk>`.
+Campos ausentes, ordem diferente ou tokens desconhecidos são rejeitados.
 
-## Treinamento oficial
+## V6.2 — base estável
 
-- semente: 20260728;
-- cinco épocas;
-- lote: 100;
-- 500 passos por época;
-- 2.500 atualizações totais;
-- tempo total: 1.766,86 segundos;
-- pico de VRAM: 1.898,33 MiB.
+A V6.2 tem dimensão 128, três blocos e 163.667 parâmetros. Cada bloco usa:
 
-Cada época possui um checkpoint separado. Todos são carregáveis com
-`torch.load(..., weights_only=True)`.
+1. Q/K COO com fan-in 32;
+2. atenção causal Top-32;
+3. residual e LayerNorm;
+4. FFN COO 128→384→128;
+5. GELU e Top-64;
+6. residual com gate e LayerNorm.
 
-## Validação
+O embedding/classificador é compartilhado e denso. Normalização, estados
+residuais e escores temporários também são densos. Portanto, o núcleo é
+estruturalmente esparso, não 100% esparso.
 
-- PPL final: 1,0505;
-- acurácia de token: 97,53%;
-- 24/24 gerações aprovadas;
-- 24/24 gerações armazenadas no relatório;
-- mínimo de 2.806 caracteres;
-- média de 2.830,3 caracteres;
-- recuperação dos campos: 100%;
-- consistência objeto/local e ações: 100%;
-- vazamento Q&A: 0%;
-- repetição média de trigramas: 1,17%;
-- frequência máxima de um trigrama: duas ocorrências;
-- retentativa controlada: 3/24 gerações;
-- cinco contratos adversariais aprovados.
+O runtime V6.2 acrescenta, sem novos parâmetros:
 
-O validador 2.0 verifica relações de objeto e local por cláusula completa. A
-contradição reproduzível `o livro foi levado para o deposito, mas o livro
-continuava na sala` é rejeitada; menções a um objeto diferente funcionam como
-distratores e não reprovam um texto válido.
+- cache causal prealocado;
+- projeções lineares convertidas uma vez para CSR em inferência;
+- reutilização dos gates;
+- reconstrução segura ao exceder a janela de 640 tokens.
 
-## Desempenho e ambiente
-
-A revalidação separa métricas com significados diferentes:
+Métricas oficiais:
 
 <!-- metricas-desempenho:inicio -->
-- forward paralelo, lote 16 e contexto 640: 144.957,06 tokens/s,
-  70,64 ms e pico de 83,42 MiB;
-- geração autorregressiva de um relato: 314,99 tokens/s;
-- latência até o primeiro token: 4,50 ms;
-- tempo total para 489 tokens e 2.840 caracteres: 1,55 s.
+- forward paralelo, lote 16 e contexto 640: 145.417,74 tokens/s,
+  70,42 ms e pico de 83,42 MiB;
+- geração autorregressiva de um relato: 313,24 tokens/s;
+- latência até o primeiro token: 4,63 ms;
+- tempo total para 489 tokens e 2.840 caracteres: 1,56 s.
 <!-- metricas-desempenho:fim -->
 
-O teste oficial foi executado em Windows 11, Python 3.14.0,
-PyTorch 2.11.0+cu128, CUDA 12.8 e NVIDIA GeForce RTX 3050. `pyproject.toml` e
-`requirements.txt` fixam a dependência principal. O GitHub Actions executa a
-suíte de CPU; `testes/test_gpu_gerador.py` valida localmente a carga e o
-forward do checkpoint em CUDA, ou é ignorado quando não existe GPU.
+SHA-256:
 
-## Segurança de checkpoint
+```text
+daba162081b351fe44bd9179c7a4f5ec374e691841d12774789916f846ac215f
+```
 
-O executor e o validador usam `weights_only=True` e recarga estrita. O script
-de promoção recusa sobrescrever um checkpoint oficial existente e exige cinco
-épocas, 50.000 amostras, 500 passos por época e todos os critérios de
-revalidação aprovados. Também exige 24 saídas auditáveis, validador 2.0 e
-medição autorregressiva válida.
+## V7.3 — base de desenvolvimento
 
-## Comparação experimental
+### Roteamento
 
-O protocolo fixou os mesmos dados, tokenizador, ordem dos lotes, semente, cinco
-épocas, lote 100, 500 passos por época, AdamW, agenda, pesos da perda e
-decodificador. O treino esparso oficial já correspondia a esse protocolo; a
-baseline densa foi treinada do zero, com cinco checkpoints separados.
+A V7.3 preserva Q/K COO e substitui a FFN fixa por um banco compartilhado de
+16 microgrupos. Um roteador causal baixo-rank escolhe quatro grupos por token.
 
-| Métrica | Esparso | Denso |
-|---|---:|---:|
-| Parâmetros | 163.667 | 163.003 |
-| PPL de teste | 1,050526 | 1,049220 |
-| Acurácia | 97,53% | 97,59% |
-| Aprovação/recuperação | 100% / 100% | 100% / 100% |
-| Tempo de treino | 1.663,30 s | 281,09 s |
-| Pico de VRAM no treino | 1.898,33 MiB | 950,36 MiB |
-| Forward atual | 144.957,06 tokens/s | 1.537.708,78 tokens/s |
-| Pico de VRAM no forward atual | 83,42 MiB | 122,21 MiB |
-| Geração autorregressiva atual | 314,99 tokens/s | 506,44 tokens/s |
-| Primeiro token atual | 4,50 ms | 2,07 ms |
+- parâmetros totais: 165.443;
+- parâmetros do roteador: 1.776;
+- conexões FFN totais: 92.160;
+- conexões FFN ativas por token: 23.040;
+- combinações teóricas por camada: 1.820.
 
-A baseline densa empatou em aprovação e recuperação, obteve PPL ligeiramente
-menor e venceu tempo de treino, VRAM de treino, forward e geração. A diferença
-de geração caiu de 5,49 para 1,61 vezes com a V6.2; o esparso manteve a
-vantagem de memória no forward, agora de 31,74%. Logo, os dados ainda não
-sustentam superioridade prática geral do esparso. A revalidação independente
-reproduziu a PPL densa com erro absoluto de `8,96e-8` e aprovou novamente as
-24 gerações.
+O roteador usa somente estados causais. Grupos inativos não são despachados na
+geração. Os pesos são compartilhados entre combinações, atendendo à proposta
+de sub-redes dependentes do contexto.
 
-## Runtime-base V6.2
+### Runtime CUDA
 
-A V6.2 preserva integralmente o estado treinado, a topologia COO, a atenção
-causal Top-32, a FFN COO Top-64, os residuais, os gates e as normalizações. Ela
-adiciona um caminho incremental para geração:
+A extensão C++/CUDA funde:
 
-1. o prompt executa um prefill completo;
-2. cada camada armazena chaves e valores causais em buffers prealocados;
-3. cada token seguinte projeta somente o estado novo;
-4. a consulta nova seleciona Top-32 no prefixo cacheado;
-5. ao preencher 640 posições, a janela é refeita para preservar a posição
-   senoidal e o comportamento exato da referência.
-6. as matrizes COO imutáveis são materializadas uma vez em CSR na inferência;
-7. os sete gates escalares são reutilizados enquanto os parâmetros não mudam.
+1. embedding e posição;
+2. normalização e Q/K;
+3. atenção incremental Top-32;
+4. roteamento Top-4;
+5. FFN, GELU, Top-64 e residual;
+6. normalização final e projeção de saída.
 
-O runtime não possui parâmetros adicionais e carrega
-`modelos/gerador_esparso_base.pt` com `weights_only=True` e recarga estrita.
-Não houve novo treino nem criação de checkpoint. A V6.2 foi promovida somente
-como runtime-base e o SHA-256 dos pesos permaneceu
-`daba162081b351fe44bd9179c7a4f5ec374e691841d12774789916f846ac215f`.
+O caminho incremental usa 11 lançamentos de kernel por token. A extensão não
+entra no checkpoint e adiciona zero parâmetros.
 
-Na RTX 3050, uma geração determinística de 489 tokens e 2.840 caracteres
-passou de 92,22 para 314,99 tokens/s, aceleração de 3,42 vezes. O tempo do
-relato completo caiu para 1,55 segundo e o primeiro token para 4,50 ms. O
-forward atual atingiu 144.957,06 tokens/s e 83,42 MiB.
+O kernel é especializado em dimensão 128, 16 grupos, Top-4, microgrupos de 24,
+Q/K fan-in 32, contexto 640 e vocabulário atual. Sem toolchain CUDA, o fallback
+PyTorch executa o mesmo checkpoint.
 
-A PPL V6.2 foi `1,050526398`. A maior diferença numérica entre logits
-incrementais e a referência no relatório isolado foi `7,63e-6`, abaixo da
-tolerância `2e-5`. As 24 gerações passaram novamente e ficaram textualmente
-idênticas às saídas oficiais.
+Os quatro microgrupos ativos ainda contêm multiplicações por zeros COO dentro
+dos blocos locais. No forward em lote, Q/K e atenção são materializados em
+temporários densos para reduzir overhead. Essas limitações são consideradas
+nas conclusões de desempenho.
 
-A V6.2 ainda não supera a geração densa de 506,44 tokens/s nem altera o custo
-do treino já executado. Testes com FP16 e FFN seletiva foram rejeitados por
-divergência acima da tolerância ou regressão de desempenho. `torch.compile`
-não executou porque não existe uma instalação Triton funcional neste Windows.
+### Checkpoint-base
 
-Artefatos:
+`modelos/gerador_esparso_v73_base.pt` contém:
 
-- `src/modelo_gerador_esparso_v62.py`;
-- `executar_v62_cache.py`;
-- `experimentar_v62_cache.py`;
-- `resultados/v62_base_runtime/relatorio.json`.
+- pesos FP32;
+- duas épocas e 1.000 passos históricos;
+- 50.000 exemplos;
+- seed 20260728;
+- `treinado_em_bf16 = false`;
+- `elegivel_promocao = false`.
+
+O runtime e o fallback têm o mesmo `state_dict`.
+
+## Qualidade textual
+
+O corpus flexiona o objeto de apoio de acordo com seu artigo. Além disso, o
+decodificador bloqueia causalmente flexões impossíveis, fragmentos de ações e
+a repetição do objeto principal na frase destinada ao objeto de apoio.
+
+Exemplo:
+
+```text
+prefixo: o relatorio foi
+token bloqueado: levada
+token válido: levado
+```
+
+Não existe correção posterior por substituição de string. O logit incompatível
+é removido antes de `argmax` ou amostragem.
+
+As seis ações procedurais são restringidas somente após marcadores como
+`o primeiro passo foi`, `começou a`, `decidiram` e `ficou responsável por`.
+Isso evita fragmentos como `mover as caixas para uma lista` ou
+`ficou responsável por categoria` sem interferir na tarefa contida no prompt.
+
+Na frase `em outra parte do ambiente`, o objeto extraído do pedido é
+temporariamente bloqueado. Assim, a frase de apoio não pode mover o próprio
+objeto principal para outro local e criar uma contradição.
+
+O validador passou a reprovar:
+
+- `o relatorio foi levada`;
+- `a camera foi levado`;
+- flexões incompatíveis após `ele` e `ela`;
+- contradições objeto/local;
+- ações diferentes da tarefa;
+- campos ausentes;
+- repetição excessiva;
+- texto incompleto.
+
+Cada relatório registra a concordância individual das 24 gerações.
+
+## Baseline densa
+
+A baseline usa dimensão 88, três blocos, FFN 88→160→88, atenção causal densa
+e 163.003 parâmetros. Residual, LayerNorm, posição, tokenizador,
+embedding/saída amarrados e protocolo de treino são equivalentes.
+
+Ela é controle científico e não pode ser promovida sem autorização.
+
+## Treinamento
+
+V6.2:
+
+- cinco épocas;
+- 500 passos por época;
+- 2.500 atualizações;
+- checkpoint separado por época;
+- AdamW e clipping de gradiente.
+
+Um novo treino V7.3 usa FP32 e exige o mesmo protocolo de cinco épocas. O
+executor de treino vetoriza microgrupos ativos e a matriz de atenção, sem
+criar novos Parameters densos persistentes.
+
+Nenhum treinador escreve diretamente em `modelos/`.
+
+O checkpoint de cada época usa o identificador
+`gerador-esparso-v73-treino-fp32`. O loader aceita esse identificador e o da
+base histórica. Somente a época 5 do protocolo completo é marcada como
+candidata; isso não promove o artefato automaticamente.
+
+### Separação de responsabilidades
+
+O antigo treinador monolítico foi dividido sem alterar sua API pública:
+
+- `src/dados_gerador.py`: corpus, codificação e lotes;
+- `src/avaliacao_linguagem.py`: loss, PPL e acurácia;
+- `src/validacao_gerador.py`: regras e métricas textuais;
+- `src/benchmark_gerador.py`: medições básicas;
+- `src/benchmark_estatistico.py`: repetições e dispersão;
+- `src/relatorio_v73.py`: relatórios e sincronização documental;
+- `src/relatorio_esparso_denso.py`: comparação histórica da baseline.
+
+`treinar_gerador_esparso.py` permanece como orquestrador e reexporta os nomes
+anteriores para não quebrar scripts e testes existentes.
+
+## Comparação obrigatória
+
+<!-- comparacao-v73:inicio -->
+O relatório separa três níveis de qualidade:
+
+- argmax do modelo puro, sem restrições de domínio;
+- argmax com restrições causais;
+- sistema completo, incluindo retentativas.
+
+Também registra candidatos bloqueados, mudanças do argmax, amostras brutas, mediana, média, desvio-padrão, clocks e energia da GPU quando `nvidia-smi` disponibiliza esses dados.
+
+| Métrica | V6.2 | V7.3 | Denso |
+|---|---:|---:|---:|
+| Época | 5 | 2 | 5 |
+| Parâmetros | 163.667 | 165.443 | 163.003 |
+| PPL teste | 1,050526 | 1,054314 | 1,049220 |
+| Aprovação — modelo puro | 21/24 | 9/24 | 22/24 |
+| Modelo puro — objeto/local | 88% | 83% | 92% |
+| Modelo puro — ações | 100% | 88% | 100% |
+| Modelo puro — concordância | 100% | 42% | 100% |
+| Aprovação — greedy restrito | 24/24 | 24/24 | 24/24 |
+| Aprovação — sistema completo | 24/24 | 24/24 | 24/24 |
+| Mudanças de argmax pelas regras | 3 | 24 | 3 |
+| Tokens bloqueados pelas regras | 179.733 | 177.103 | 168.888 |
+| Forward — mediana, média ± DP | 143.184,54 tok/s (média 139.095,63 ± 6.994,69) | 273.029,23 tok/s (média 271.942,27 ± 2.175,18) | 1.695.953,89 tok/s (média 1.702.406,96 ± 16.872,68) |
+| Geração — mediana, média ± DP | 311,01 tok/s (média 309,32 ± 12,45) | 998,26 tok/s (média 973,31 ± 54,48) | 505,69 tok/s (média 504,57 ± 3,19) |
+| Primeiro token — mediana | 4,17 ms | 5,93 ms | 1,78 ms |
+| VRAM forward — mediana | 83,42 MiB | 102,07 MiB | 46,51 MiB |
+| Checkpoint | 678.219 bytes | 691.289 bytes | 674.635 bytes |
+<!-- comparacao-v73:fim -->
+
+Fonte única:
+
+```text
+resultados/v73_base/comparacao.json
+```
+
+Relatório legível e textos:
+
+```text
+resultados/v73_base/RELATORIO_V73.md
+resultados/v73_base/EXEMPLOS_COMPARATIVOS.md
+```
+
+## Segurança e reprodutibilidade
+
+- carregar somente com `weights_only=True`;
+- recarregar estado com `strict=True`;
+- nunca sobrescrever as duas bases;
+- salvar épocas separadamente;
+- fixar seed e protocolo;
+- excluir compilação inicial do benchmark;
+- separar forward paralelo de geração percebida;
+- provar equivalência de kernels;
+- manter as 24 saídas no JSON;
+- tratar o JSON como fonte das métricas documentais.
+
+## Critério de promoção
+
+Um futuro checkpoint V7.3 somente pode ser promovido após:
+
+- cinco épocas completas;
+- 50.000 exemplos;
+- 500 passos por época;
+- PPL e acurácia reavaliadas;
+- 24 saídas auditáveis do modelo puro;
+- 24 saídas auditáveis do greedy restrito;
+- 24/24 no sistema completo;
+- concordância e intervenções do decodificador registradas separadamente;
+- recuperação integral;
+- testes de causalidade e equivalência;
+- comparação contra V6.2 e denso;
+- benchmark com no mínimo cinco repetições após aquecimento;
+- PPL no máximo 5% acima do controle denso;
+- SHA-256 do relatório igual ao checkpoint candidato;
+- aprovação explícita do usuário.
+
+Fluxo:
+
+```powershell
+python treinar_gerador_esparso_v73.py
+python comparar_v73.py --checkpoint-v73 <epoca_05.pt> --resultados <validacao> --nao-sincronizar-documentacao
+python promover_gerador_esparso.py --arquitetura v73 --origem <epoca_05.pt> --relatorio <comparacao.json>
+```
+
+O promotor primeiro valida sem copiar. A troca só ocorre com
+`--confirmar-promocao`; se já houver base, `--substituir` cria um backup e faz
+a troca atomicamente.
 
 ## Limite de validade
 
-As métricas comprovam desempenho no domínio procedural treinado. Elas não
-demonstram linguagem aberta geral. A avaliação usa combinações disjuntas, mas
-segue o mesmo gerador procedural do treino. A seleção é esparsa e não mantém a
-matriz completa de atenção, embora a computação Q/K ainda seja quadrática.
-Os tempos dos dois treinos foram registrados em execuções distintas na mesma
-GPU. A equivalência é por parâmetros, não por largura. O resultado é específico
-do corpus procedural, da RTX 3050 e dos kernels PyTorch avaliados; não autoriza
-promover automaticamente a baseline nem generalizar a conclusão.
+Os resultados se restringem ao corpus procedural fechado e à RTX 3050 usada.
+Não demonstram domínio geral do português. Roteamento combinatório observado
+não prova, isoladamente, generalização semântica. Temporários densos e kernels
+especializados limitam a portabilidade das conclusões.

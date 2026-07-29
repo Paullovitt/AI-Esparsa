@@ -158,7 +158,7 @@ def main() -> None:
     )
     relatorio["avaliacao_adversarial"] = adversarial
     relatorio["revalidacao"] = {
-        "versao_validador": "2.0.0",
+        "versao_validador": "3.0.0",
         "checkpoint_epoca": int(checkpoint["epoca"]),
         "weights_only": True,
         "criterios": {

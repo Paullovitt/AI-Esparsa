@@ -73,7 +73,7 @@ def carregar_gerador(
         **checkpoint["configuracao"]
     )
     # A injecao da classe permite runtimes experimentais sem alterar o
-    # carregamento seguro nem o executor oficial, cujo padrao segue V6.1.
+    # carregamento seguro nem o executor estável, cujo padrão segue V6.2.
     modelo = classe_modelo(
         tokenizador.tamanho,
         tokenizador.pad_id,

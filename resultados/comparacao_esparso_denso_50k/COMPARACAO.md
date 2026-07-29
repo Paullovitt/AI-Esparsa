@@ -16,17 +16,17 @@ Mesmos dados, ordem de lotes, cinco épocas, 500 passos por época, lote 100, Ad
 | Taxa de retentativa | 12,50% | 8,33% | denso |
 | Tempo de treino (s) | 1.663,30 | 281,09 | denso |
 | Pico de VRAM no treino (MiB) | 1.898,33 | 950,36 | denso |
-| Forward (tokens/s) | 121.398,23 | 1.537.708,78 | denso |
-| Pico de VRAM no forward (MiB) | 90,09 | 122,21 | esparso |
-| Geração real (tokens/s) | 92,22 | 506,44 | denso |
-| Primeiro token (ms) | 11,95 | 2,07 | denso |
+| Forward (tokens/s) | 132.431,00 | 1.730.921,20 | denso |
+| Pico de VRAM no forward (MiB) | 82,77 | 43,17 | denso |
+| Geração real (tokens/s) | 296,01 | 534,80 | denso |
+| Primeiro token (ms) | 4,95 | 1,98 | denso |
 | Checkpoint (bytes) | 678.219 | 674.635 | denso |
 
 ## Conclusão automática
 
 A vantagem prática esparsa não foi sustentada de forma majoritária neste protocolo.
 
-A baseline densa treinou 5,92× mais rápido, executou o forward 12,67× mais rápido e gerou texto 5,49× mais rápido.
-O esparso usou 26,29% menos VRAM no forward; o denso usou 49,94% menos VRAM no treino.
+A baseline densa treinou 5,92× mais rápido, executou o forward 13,07× mais rápido e gerou texto 1,81× mais rápido.
+O denso usou 47,84% menos VRAM no forward; o denso usou 49,94% menos VRAM no treino.
 
 O resultado vale para este domínio, hardware e orçamento. Uma única configuração não prova superioridade universal.

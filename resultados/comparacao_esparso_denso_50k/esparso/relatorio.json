@@ -1,6 +1,6 @@
 {
   "experimento": "comparacao_esparso_50k",
-  "versao": "1.1.0",
+  "versao": "1.2.0",
   "autor": "Paulo Augusto",
   "ano": 2026,
   "papel": "modelo_oficial_com_treino_existente_equivalente",
@@ -52,7 +52,7 @@
     "bloco_consultas_atencao": 32
   },
   "arquitetura": {
-    "modelo": "gerador-esparso-coerente-base",
+    "modelo": "gerador-esparso-v62-base-runtime",
     "parametros": 163667,
     "camadas": 3,
     "atencao_causal_top_k": 32,
@@ -69,7 +69,14 @@
     "normalizacao": true,
     "lineares_densas_internas": 0,
     "classificador_denso": true,
-    "pesos_embedding_saida_amarrados": true
+    "pesos_embedding_saida_amarrados": true,
+    "cache_causal_incremental": true,
+    "cache_pre_alocado": true,
+    "cache_linear_csr": true,
+    "cache_gates_escalares": true,
+    "parametros_adicionais_cache": 0,
+    "arquitetura_pesos_identica_oficial": true,
+    "checkpoint_oficial": true
   },
   "avaliacao_inicial": {
     "perda": 5.8025149003521035,
@@ -140,8 +147,8 @@
     }
   ],
   "avaliacao_final": {
-    "perda": 0.04929130235085317,
-    "ppl": 1.050526326960745,
+    "perda": 0.04929135496294228,
+    "ppl": 1.0505263822311313,
     "acuracia_token": 0.9753365799955658,
     "tokens": 523204.0
   },
@@ -550,17 +557,19 @@
   },
   "desempenho_forward": {
     "tipo": "forward_paralelo_lote_16_contexto_completo",
-    "tokens_por_segundo": 121398.22539987085,
-    "latencia_ms": 84.3504916671615,
-    "vram_pico_mib": 90.08544921875
+    "tokens_por_segundo": 132431.00342589672,
+    "latencia_ms": 77.32328333319553,
+    "vram_pico_mib": 82.76806640625
   },
   "desempenho_autorregressivo": {
     "tipo": "geracao_autorregressiva_relato_completo",
     "tokens_gerados": 489.0,
-    "tempo_total_segundos": 5.302396099999896,
-    "latencia_primeiro_token_ms": 11.950200001592748,
-    "latencia_media_token_ms": 10.84334580777075,
-    "tokens_por_segundo": 92.22245769228925,
+    "tempo_total_segundos": 1.6519599999955972,
+    "latencia_primeiro_token_ms": 4.947399997035973,
+    "latencia_media_token_ms": 3.3782413087844523,
+    "tokens_por_segundo": 296.0120099768174,
+    "cache_incremental_utilizado": 1.0,
+    "vram_pico_mib": 17.0654296875,
     "caracteres_gerados": 2840.0,
     "frases_geradas": 24.0
   },

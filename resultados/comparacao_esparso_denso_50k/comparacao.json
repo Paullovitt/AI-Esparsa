@@ -1,6 +1,6 @@
 {
   "experimento": "comparacao_esparso_denso_parametros_equivalentes",
-  "versao": "1.1.0",
+  "versao": "1.2.0",
   "autor": "Paulo Augusto",
   "ano": 2026,
   "protocolo": {
@@ -51,16 +51,16 @@
       "vantagem_percentual_esparso": -0.4073544658687256
     },
     "ppl": {
-      "esparso": 1.050526326960745,
-      "denso": 1.049220038945348,
+      "esparso": 1.0505263822311313,
+      "denso": 1.049220128540948,
       "vencedor": "denso",
-      "vantagem_percentual_esparso": -0.1245008641571399
+      "vantagem_percentual_esparso": -0.12449758202788264
     },
     "acuracia_token": {
       "esparso": 0.9753365799955658,
-      "denso": 0.9758736554001881,
+      "denso": 0.9758660101986988,
       "vencedor": "denso",
-      "vantagem_percentual_esparso": -0.05503534209068128
+      "vantagem_percentual_esparso": -0.05425234587534966
     },
     "aprovacao_geracao": {
       "esparso": 1.0,
@@ -99,28 +99,28 @@
       "vantagem_percentual_esparso": -99.74947722123176
     },
     "forward_tokens_s": {
-      "esparso": 121398.22539987085,
-      "denso": 1537708.7789920259,
+      "esparso": 132431.00342589672,
+      "denso": 1730921.2001279595,
       "vencedor": "denso",
-      "vantagem_percentual_esparso": -92.10525249914696
+      "vantagem_percentual_esparso": -92.34910269652329
     },
     "vram_forward_mib": {
-      "esparso": 90.08544921875,
-      "denso": 122.2109375,
-      "vencedor": "esparso",
-      "vantagem_percentual_esparso": 26.286917471073323
+      "esparso": 82.76806640625,
+      "denso": 43.1748046875,
+      "vencedor": "denso",
+      "vantagem_percentual_esparso": -91.70455316550179
     },
     "geracao_tokens_s": {
-      "esparso": 92.22245769228925,
-      "denso": 506.43884475104846,
+      "esparso": 296.0120099768174,
+      "denso": 534.7981164584869,
       "vencedor": "denso",
-      "vantagem_percentual_esparso": -81.79001104513945
+      "vantagem_percentual_esparso": -44.64976579628717
     },
     "primeiro_token_ms": {
-      "esparso": 11.950200001592748,
-      "denso": 2.0703999980469234,
+      "esparso": 4.947399997035973,
+      "denso": 1.9845999995595776,
       "vencedor": "denso",
-      "vantagem_percentual_esparso": -477.19281360441295
+      "vantagem_percentual_esparso": -149.2895292821677
     },
     "checkpoint_bytes": {
       "esparso": 678219.0,
@@ -132,13 +132,14 @@
   "resumo_numerico": {
     "aceleracao_treino_denso": 5.917408733196992,
     "reducao_vram_treino_denso_percentual": 49.93729075483617,
-    "aceleracao_forward_denso": 12.66664956532109,
-    "aceleracao_geracao_densa": 5.491491524123543,
-    "reducao_vram_forward_esparso_percentual": 26.286917471073323,
-    "diferenca_ppl_denso_menos_esparso": -0.0013062880153968948
+    "aceleracao_forward_denso": 13.070362342278228,
+    "aceleracao_geracao_densa": 1.8066770888801786,
+    "diferenca_ppl_denso_menos_esparso": -0.0013062536901833344,
+    "vencedor_vram_forward": "denso",
+    "reducao_vram_forward_vencedor_percentual": 47.836398067359255
   },
   "qualidade_esparsa_preservada": true,
-  "vantagens_esparsas_de_eficiencia": 1,
+  "vantagens_esparsas_de_eficiencia": 0,
   "vantagens_de_eficiencia_avaliadas": 7,
   "vantagem_pratica_esparsa_sustentada": false,
   "modelo_superior_neste_protocolo": "denso",
