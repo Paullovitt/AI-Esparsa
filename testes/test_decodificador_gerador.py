@@ -43,6 +43,48 @@ class ModeloFalso(torch.nn.Module):
         return logits, {}
 
 
+class ModeloFalsoComCache(ModeloFalso):
+    """Simula o contrato incremental e registra o caminho usado."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.prefills = 0
+        self.avancos = 0
+        self.forwards = 0
+
+    @staticmethod
+    def _logits(
+        tokens: torch.Tensor,
+        gerados: int,
+    ) -> torch.Tensor:
+        sequencia = [5, 6, 7, 5, 6, 7]
+        proximo = sequencia[min(gerados, len(sequencia) - 1)]
+        logits = torch.full(
+            (1, 1, 8),
+            -20.0,
+            device=tokens.device,
+        )
+        logits[0, -1, proximo] = 20.0
+        return logits
+
+    def forward(self, tokens: torch.Tensor):
+        self.forwards += 1
+        return super().forward(tokens)
+
+    def iniciar_cache_geracao(self, tokens: torch.Tensor):
+        self.prefills += 1
+        return self._logits(tokens, 0), {"gerados": 0}
+
+    def avancar_cache_geracao(
+        self,
+        novo_token: torch.Tensor,
+        cache: dict[str, int],
+    ):
+        self.avancos += 1
+        cache["gerados"] += 1
+        return self._logits(novo_token, cache["gerados"]), cache
+
+
 class TesteDecodificadorGerador(unittest.TestCase):
     def test_bloqueia_bigrama_repetido(self) -> None:
         logits = torch.zeros(10)
@@ -80,6 +122,37 @@ class TesteDecodificadorGerador(unittest.TestCase):
             metricas["latencia_primeiro_token_ms"],
             0.0,
         )
+
+    def test_usa_cache_incremental_quando_modelo_oferece_contrato(self) -> None:
+        modelo = ModeloFalsoComCache()
+        metricas: dict[str, float] = {}
+        texto = gerar_controlado(
+            modelo,
+            TokenizadorFalso(),
+            "Resposta:",
+            torch.device("cpu"),
+            configuracao=ConfiguracaoDecodificacao(maximo_tokens=8),
+            metricas_desempenho=metricas,
+        )
+        self.assertEqual(texto, "resposta: na cozinha.")
+        self.assertEqual(modelo.prefills, 1)
+        self.assertEqual(modelo.avancos, 2)
+        self.assertEqual(modelo.forwards, 0)
+        self.assertEqual(metricas["cache_incremental_utilizado"], 1.0)
+
+    def test_cache_pode_ser_desativado_para_referencia(self) -> None:
+        modelo = ModeloFalsoComCache()
+        texto = gerar_controlado(
+            modelo,
+            TokenizadorFalso(),
+            "Resposta:",
+            torch.device("cpu"),
+            configuracao=ConfiguracaoDecodificacao(maximo_tokens=8),
+            usar_cache_incremental=False,
+        )
+        self.assertEqual(texto, "resposta: na cozinha.")
+        self.assertEqual(modelo.prefills, 0)
+        self.assertGreater(modelo.forwards, 0)
 
 
 if __name__ == "__main__":

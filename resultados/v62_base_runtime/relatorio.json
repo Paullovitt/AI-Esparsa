@@ -1,26 +1,32 @@
 {
-  "experimento": "gerador_esparso_base_50k",
-  "versao": "1.2.0",
+  "experimento": "v62_base_runtime_csr",
+  "versao_projeto": "1.2.0",
+  "versao_runtime": "6.2",
   "autor": "Paulo Augusto",
   "ano": 2026,
-  "objetivo": "gerar relatos completos e coerentes preservando os campos fornecidos no pedido",
-  "dados": {
-    "treino": 50000,
-    "validacao": 1000,
-    "teste": 1000,
-    "combinacoes_disjuntas": true,
-    "sequencia_maxima": 528,
-    "relatos_extensos": true,
-    "frases_por_relato": 24
+  "objetivo": "reduzir o custo autorregressivo preservando integralmente pesos, topologia esparsa e saida da V6.1",
+  "ambiente": {
+    "python": "3.14.0",
+    "sistema": "Windows-11-10.0.26200-SP0",
+    "pytorch": "2.11.0+cu128",
+    "cuda_runtime": "12.8",
+    "dispositivo": "cuda",
+    "gpu": "NVIDIA GeForce RTX 3050"
   },
-  "epocas": 5,
-  "passos_por_epoca": 500,
-  "passos_totais": 2500,
-  "tamanho_lote": 100,
-  "tokenizador": {
-    "tipo": "palavras_e_pontuacao",
-    "vocabulario": 332,
-    "unk_nas_divisoes": 0
+  "checkpoint": {
+    "origem": "C:\\Users\\USER\\Downloads\\AI\\AI-Esparsa\\modelos\\gerador_esparso_base.pt",
+    "modelo": "gerador-esparso-coerente-base",
+    "epoca": 5,
+    "carregado_weights_only": true,
+    "strict": true,
+    "sha256_antes": "daba162081b351fe44bd9179c7a4f5ec374e691841d12774789916f846ac215f",
+    "sha256_depois": "daba162081b351fe44bd9179c7a4f5ec374e691841d12774789916f846ac215f",
+    "oficial_preservado": true
+  },
+  "treino": {
+    "executado": false,
+    "motivo": "otimizacao exclusiva de runtime, sem novos parametros ou alteracao de pesos",
+    "ppl_requer_novo_treino": false
   },
   "configuracao": {
     "dimensao": 128,
@@ -34,11 +40,15 @@
     "maximo_contexto": 640,
     "bloco_consultas_atencao": 32
   },
-  "arquitetura_treino": {
-    "modelo": "gerador-esparso-coerente-base",
+  "arquitetura": {
+    "modelo": "gerador-esparso-v62-base-runtime",
     "parametros": 163667,
     "camadas": 3,
     "atencao_causal_top_k": 32,
+    "atencao_top_k_em_blocos": true,
+    "bloco_consultas_atencao": 32,
+    "memoria_escores_tempo_quadratica": false,
+    "computacao_escores_tempo_quadratica": true,
     "qk_coo": true,
     "conexoes_qk": 24576,
     "densidade_qk": 0.25,
@@ -48,81 +58,49 @@
     "normalizacao": true,
     "lineares_densas_internas": 0,
     "classificador_denso": true,
-    "pesos_embedding_saida_amarrados": true
+    "pesos_embedding_saida_amarrados": true,
+    "cache_causal_incremental": true,
+    "cache_pre_alocado": true,
+    "cache_linear_csr": true,
+    "cache_gates_escalares": true,
+    "parametros_adicionais_cache": 0,
+    "arquitetura_pesos_identica_oficial": true,
+    "checkpoint_oficial": true
   },
-  "avaliacao_inicial": {
-    "perda": 5.8025149003521035,
-    "ppl": 331.13127579208344,
-    "acuracia_token": 0.0011086855958802773,
-    "tokens": 523142.0
+  "equivalencia_numerica": {
+    "tolerancia": 2e-05,
+    "prefill": [
+      {
+        "comprimento": 8,
+        "diferenca_maxima_absoluta": 3.814697265625e-06
+      },
+      {
+        "comprimento": 32,
+        "diferenca_maxima_absoluta": 5.7220458984375e-06
+      },
+      {
+        "comprimento": 128,
+        "diferenca_maxima_absoluta": 4.76837158203125e-06
+      },
+      {
+        "comprimento": 512,
+        "diferenca_maxima_absoluta": 5.125999450683594e-06
+      }
+    ],
+    "diferenca_maxima_prefill": 5.7220458984375e-06,
+    "diferenca_maxima_incremental": 9.5367431640625e-06,
+    "aprovado": true
   },
-  "historico": [
-    {
-      "epoca": 1,
-      "perda_treino_ponderada": 0.9185562101294926,
-      "validacao": {
-        "perda": 0.06284359369160883,
-        "ppl": 1.0648602753412049,
-        "acuracia_token": 0.970105630975911,
-        "tokens": 523142.0
-      },
-      "tempo_segundos": 318.1743123999986,
-      "vram_pico_mib": 1898.33203125
-    },
-    {
-      "epoca": 2,
-      "perda_treino_ponderada": 0.04016057579173482,
-      "validacao": {
-        "perda": 0.05567295324677023,
-        "ppl": 1.0572518564018578,
-        "acuracia_token": 0.9728486720622699,
-        "tokens": 523142.0
-      },
-      "tempo_segundos": 333.0547676000024,
-      "vram_pico_mib": 1897.51220703125
-    },
-    {
-      "epoca": 3,
-      "perda_treino_ponderada": 0.03508035602798748,
-      "validacao": {
-        "perda": 0.050315943940501574,
-        "ppl": 1.0516032915835165,
-        "acuracia_token": 0.9748615098768595,
-        "tokens": 523142.0
-      },
-      "tempo_segundos": 342.07151879999947,
-      "vram_pico_mib": 1897.51220703125
-    },
-    {
-      "epoca": 4,
-      "perda_treino_ponderada": 0.03397896720267389,
-      "validacao": {
-        "perda": 0.04956593471141081,
-        "ppl": 1.0508148751062618,
-        "acuracia_token": 0.9753221878572166,
-        "tokens": 523142.0
-      },
-      "tempo_segundos": 338.13918879999983,
-      "vram_pico_mib": 1897.51220703125
-    },
-    {
-      "epoca": 5,
-      "perda_treino_ponderada": 0.03362542892641089,
-      "validacao": {
-        "perda": 0.049457593698119966,
-        "ppl": 1.0507010349248034,
-        "acuracia_token": 0.9751386812758295,
-        "tokens": 523142.0
-      },
-      "tempo_segundos": 331.8639856000009,
-      "vram_pico_mib": 1897.51220703125
-    }
-  ],
   "avaliacao_final": {
-    "perda": 0.04929137001163295,
-    "ppl": 1.050526398040178,
+    "perda": 0.04929135589619441,
+    "ppl": 1.0505263832115372,
     "acuracia_token": 0.9753365799955658,
     "tokens": 523204.0
+  },
+  "comparacao_ppl_oficial": {
+    "v61": 1.050526326960745,
+    "v62": 1.0505263832115372,
+    "diferenca_absoluta": 5.625079224635954e-08
   },
   "geracao_livre": {
     "amostras_avaliadas": 24,
@@ -527,95 +505,41 @@
     ],
     "falhas": []
   },
-  "recuperacao": {
-    "campos_do_pedido": 1.0
+  "equivalencia_geracoes_oficiais": {
+    "comparados": 24,
+    "textos_identicos": 24,
+    "todos_identicos": true
   },
-  "tempo_total_segundos": 1766.8575965000018,
-  "checkpoint_final": "resultados/gerador_esparso_base_50k/epoca_05.pt",
-  "criterio_minimo_caracteres": 2000,
-  "limite": "O resultado mede o dominio procedural treinado e nao comprova linguagem aberta geral.",
-  "revalidacao": {
-    "versao_validador": "2.0.0",
-    "checkpoint_epoca": 5,
-    "weights_only": true,
-    "criterios": {
-      "ppl_maxima_1_20": true,
-      "completude_100": true,
-      "recuperacao_100": true,
-      "consistencia_objeto_local_100": true,
-      "consistencia_acoes_100": true,
-      "repeticao_trigramas_media_ate_1_5_porcento": true,
-      "nenhum_trigrama_repetido_mais_de_duas_vezes": true,
-      "todas_geracoes_com_2_mil_caracteres": true,
-      "sem_vazamento_pergunta": true,
-      "todas_as_24_geracoes_salvas": true,
-      "contratos_adversariais_aprovados": true
+  "benchmark_autorregressivo": {
+    "prompt": "Pedido: escreva um relato sobre bruno, com ajuda de diego, para organizar uma pequena mostra cultural. Inclua o documento no corredor e o problema um atraso no transporte. Texto:",
+    "texto_identico": true,
+    "recalculo_completo_sem_cache": {
+      "tokens_gerados": 489.0,
+      "tempo_total_segundos": 4.560657800000627,
+      "latencia_primeiro_token_ms": 6.707400003506336,
+      "latencia_media_token_ms": 9.32649856850844,
+      "tokens_por_segundo": 107.22137495164246,
+      "cache_incremental_utilizado": 0.0,
+      "vram_pico_mib": 17.9658203125,
+      "caracteres_gerados": 2840.0
     },
-    "aprovado": true
+    "v62_cache_incremental_csr": {
+      "tokens_gerados": 489.0,
+      "tempo_total_segundos": 1.5433993000042392,
+      "latencia_primeiro_token_ms": 4.8976000034599565,
+      "latencia_media_token_ms": 3.1562357873297326,
+      "tokens_por_segundo": 316.83310987549163,
+      "cache_incremental_utilizado": 1.0,
+      "vram_pico_mib": 16.21875,
+      "caracteres_gerados": 2840.0
+    },
+    "aceleracao": 2.95494354570985,
+    "reducao_tempo_percentual": 66.15840592109264,
+    "variacao_vram_percentual": -9.724411588846005
   },
-  "promocao": {
-    "modelo_base_ativo": "Gerador Esparso Coerente",
-    "checkpoint_oficial": "modelos/gerador_esparso_base.pt",
-    "sha256": "daba162081b351fe44bd9179c7a4f5ec374e691841d12774789916f846ac215f",
-    "autorizada_pelo_usuario": true,
-    "revalidacao_atual_aprovada": true
-  },
-  "arquitetura_runtime": {
-    "modelo": "gerador-esparso-v62-base-runtime",
-    "parametros": 163667,
-    "camadas": 3,
-    "atencao_causal_top_k": 32,
-    "atencao_top_k_em_blocos": true,
-    "bloco_consultas_atencao": 32,
-    "memoria_escores_tempo_quadratica": false,
-    "computacao_escores_tempo_quadratica": true,
-    "qk_coo": true,
-    "conexoes_qk": 24576,
-    "densidade_qk": 0.25,
-    "ffn_coo": true,
-    "conexoes_ffn": 92160,
-    "residuais": true,
-    "normalizacao": true,
-    "lineares_densas_internas": 0,
-    "classificador_denso": true,
-    "pesos_embedding_saida_amarrados": true,
-    "cache_causal_incremental": true,
-    "cache_pre_alocado": true,
-    "cache_linear_csr": true,
-    "cache_gates_escalares": true,
-    "parametros_adicionais_cache": 0,
-    "arquitetura_pesos_identica_oficial": true,
-    "checkpoint_oficial": true
-  },
-  "ambiente_revalidacao": {
-    "python": "3.14.0",
-    "sistema": "Windows-11-10.0.26200-SP0",
-    "pytorch": "2.11.0+cu128",
-    "cuda_runtime": "12.8",
-    "gpu": "NVIDIA GeForce RTX 3050"
-  },
-  "desempenho_forward": {
-    "tipo": "forward_paralelo_lote_16_contexto_completo",
-    "tokens_por_segundo": 144957.06201473103,
-    "latencia_ms": 70.64160833336548,
-    "vram_pico_mib": 83.42138671875
-  },
-  "desempenho_autorregressivo": {
-    "tipo": "geracao_autorregressiva_relato_completo",
-    "tokens_gerados": 489.0,
-    "tempo_total_segundos": 1.5524309999964316,
-    "latencia_primeiro_token_ms": 4.499900001974311,
-    "latencia_media_token_ms": 3.1747055214650954,
-    "tokens_por_segundo": 314.9898449600169,
-    "cache_incremental_utilizado": 1.0,
-    "caracteres_gerados": 2840.0,
-    "frases_geradas": 24.0
-  },
-  "avaliacao_adversarial": {
-    "contradicao_livro_deposito_rejeitada": true,
-    "distrator_de_outro_objeto_aceito": true,
-    "prompt_oov_rejeitado": true,
-    "prompt_sem_campos_rejeitado": true,
-    "prompt_com_ordem_invalida_rejeitado": true
-  }
+  "limitacoes": [
+    "o cache acelera geracao, nao o treino nem o forward paralelo",
+    "ao ultrapassar 640 tokens o cache refaz a janela para preservar as posicoes da referencia",
+    "a medicao e especifica do hardware e ambiente registrados"
+  ]
 }

@@ -99,6 +99,7 @@ def gerar_controlado(
     amostrar: bool = False,
     semente: int = 20260807,
     metricas_desempenho: dict[str, float] | None = None,
+    usar_cache_incremental: bool = True,
 ) -> str:
     """Gera uma continuacao sem repetir n-gramas e encerra na primeira frase."""
     modelo.eval()
@@ -109,14 +110,35 @@ def gerar_controlado(
         torch.cuda.synchronize(dispositivo)
     inicio = time.perf_counter()
     instante_primeiro_token: float | None = None
-
-    for _ in range(configuracao.maximo_tokens):
-        entrada = torch.tensor(
+    cache: object | None = None
+    logits_cache: Tensor | None = None
+    iniciar_cache = getattr(modelo, "iniciar_cache_geracao", None)
+    avancar_cache = getattr(modelo, "avancar_cache_geracao", None)
+    cache_disponivel = (
+        usar_cache_incremental
+        and callable(iniciar_cache)
+        and callable(avancar_cache)
+    )
+    if cache_disponivel and configuracao.maximo_tokens > 0:
+        entrada_inicial = torch.tensor(
             [ids[-modelo.configuracao.maximo_contexto :]],
             dtype=torch.long,
             device=dispositivo,
         )
-        logits, _ = modelo(entrada)
+        logits_cache, cache = iniciar_cache(entrada_inicial)
+
+    for _ in range(configuracao.maximo_tokens):
+        if cache_disponivel:
+            if logits_cache is None or cache is None:
+                raise RuntimeError("cache incremental nao foi inicializado")
+            logits = logits_cache
+        else:
+            entrada = torch.tensor(
+                [ids[-modelo.configuracao.maximo_contexto :]],
+                dtype=torch.long,
+                device=dispositivo,
+            )
+            logits, _ = modelo(entrada)
         atual = logits[0, -1].float().clone()
         atual[tokenizador.pad_id] = -torch.inf
         atual[tokenizador.bos_id] = -torch.inf
@@ -142,6 +164,16 @@ def gerar_controlado(
             configuracao,
         ):
             break
+        if cache_disponivel:
+            token_incremental = torch.tensor(
+                [[proximo]],
+                dtype=torch.long,
+                device=dispositivo,
+            )
+            logits_cache, cache = avancar_cache(
+                token_incremental,
+                cache,
+            )
 
     if dispositivo.type == "cuda":
         torch.cuda.synchronize(dispositivo)
@@ -163,6 +195,9 @@ def gerar_controlado(
                     duracao * 1000.0 / max(1, quantidade)
                 ),
                 "tokens_por_segundo": quantidade / duracao,
+                "cache_incremental_utilizado": (
+                    1.0 if cache_disponivel else 0.0
+                ),
             }
         )
     return tokenizador.decodificar(ids)

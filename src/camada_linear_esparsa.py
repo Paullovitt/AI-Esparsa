@@ -6,6 +6,8 @@ Ano: 2026
 
 from __future__ import annotations
 
+import warnings
+
 import torch
 from torch import Tensor, nn
 
@@ -41,12 +43,27 @@ class LinearBlocoEsparsa(nn.Module):
             ordem.to(torch.long).contiguous(),
             persistent=False,
         )
+        contagens_linhas = torch.bincount(
+            self.indices[0],
+            minlength=saidas,
+        )
+        self.register_buffer(
+            "ponteiros_linhas_csr",
+            torch.cat(
+                (
+                    torch.zeros(1, dtype=torch.long),
+                    contagens_linhas.cumsum(0),
+                )
+            ).contiguous(),
+            persistent=False,
+        )
         self.valores = nn.Parameter(valores_iniciais.to(torch.float32))
         if bias_inicial is None:
             bias_inicial = torch.zeros(saidas)
         self.bias = nn.Parameter(bias_inicial.to(torch.float32))
         self._matriz_inferencia: Tensor | None = None
         self._versao_cache = -1
+        self._usar_csr_inferencia = False
 
     def _construir_matriz(self, valores: Tensor) -> Tensor:
         # A topologia é validada uma vez pelos testes e não muda em runtime.
@@ -59,6 +76,36 @@ class LinearBlocoEsparsa(nn.Module):
                 is_coalesced=True,
                 check_invariants=False,
             )
+
+    def _construir_matriz_csr(self, valores: Tensor) -> Tensor:
+        """Materializa CSR uma vez para evitar COO->CSR em cada ``mm``."""
+
+        with (
+            warnings.catch_warnings(),
+            torch.sparse.check_sparse_tensor_invariants(enable=False),
+        ):
+            # O aviso beta e conhecido no PyTorch 2.11; o caminho possui
+            # equivalencia e regressao cobertas pela suite do projeto.
+            warnings.filterwarnings(
+                "ignore",
+                message="Sparse CSR tensor support is in beta state.*",
+                category=UserWarning,
+            )
+            return torch.sparse_csr_tensor(
+                self.ponteiros_linhas_csr,
+                self.indices[1],
+                valores[self.ordem_valores],
+                size=(self.saidas, self.entradas),
+                device=self.valores.device,
+                check_invariants=False,
+            )
+
+    def configurar_cache_csr_inferencia(self, ativar: bool = True) -> None:
+        """Seleciona CSR somente no cache sem alterar o caminho de treino."""
+
+        if self._usar_csr_inferencia != ativar:
+            self._usar_csr_inferencia = ativar
+            self._limpar_cache()
 
     def _limpar_cache(self) -> None:
         self._matriz_inferencia = None
@@ -83,9 +130,12 @@ class LinearBlocoEsparsa(nn.Module):
             self._matriz_inferencia is None
             or self._versao_cache != versao
         ):
-            self._matriz_inferencia = self._construir_matriz(
-                self.valores.detach()
+            construtor = (
+                self._construir_matriz_csr
+                if self._usar_csr_inferencia
+                else self._construir_matriz
             )
+            self._matriz_inferencia = construtor(self.valores.detach())
             self._versao_cache = versao
         return self._matriz_inferencia
 

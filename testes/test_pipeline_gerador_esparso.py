@@ -354,10 +354,10 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
             relatorio,
         )
 
-    def test_repositorio_mantem_um_modelo_oficial_e_uma_baseline(
+    def test_repositorio_mantem_um_checkpoint_oficial_e_um_controle(
         self,
     ) -> None:
-        """Limita a exceção autorizada à baseline densa experimental."""
+        """Distingue runtime sem pesos de um novo modelo treinado."""
 
         implementacoes = sorted(
             caminho.name
@@ -377,6 +377,7 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
             [
                 "modelo_gerador_denso.py",
                 "modelo_gerador_esparso.py",
+                "modelo_gerador_esparso_v62.py",
             ],
         )
         self.assertEqual(
@@ -389,7 +390,15 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
                 {
                     "gerador_esparso_base_50k",
                     "comparacao_esparso_denso_50k",
+                    "v62_base_runtime",
                 }
+            )
+        )
+        self.assertFalse(
+            list(
+                (
+                    RAIZ / "resultados" / "v62_base_runtime"
+                ).glob("*.pt")
             )
         )
 

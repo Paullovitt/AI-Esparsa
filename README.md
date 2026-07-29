@@ -15,6 +15,11 @@ O checkpoint oficial é:
 
 `modelos/gerador_esparso_base.pt`
 
+A V6.2 é o runtime-base oficial. Ela reutiliza exatamente o checkpoint e os
+163.667 parâmetros treinados, adiciona cache causal incremental, matrizes CSR
+cacheadas em inferência e gates escalares reutilizados. Não existe um segundo
+checkpoint nem alteração da topologia neural.
+
 SHA-256:
 
 `daba162081b351fe44bd9179c7a4f5ec374e691841d12774789916f846ac215f`
@@ -109,8 +114,21 @@ Geração com pedido próprio:
 python executar_gerador_esparso.py "Pedido: escreva um relato sobre bruno, com ajuda de diego, para organizar uma pequena mostra cultural. Inclua o documento no corredor e o problema um atraso no transporte. Texto:"
 ```
 
-O executor seleciona CUDA quando disponível e recarrega o checkpoint com
-`weights_only=True` e `strict=True`.
+O executor seleciona CUDA quando disponível, usa o runtime-base V6.2 e
+recarrega o checkpoint com `weights_only=True` e `strict=True`.
+
+O alias explícito abaixo produz o mesmo resultado:
+
+```powershell
+python executar_v62_cache.py
+```
+
+Também é possível fornecer o mesmo contrato de prompt aceito pelo executor
+oficial:
+
+```powershell
+python executar_v62_cache.py "Pedido: escreva um relato sobre bruno, com ajuda de diego, para organizar uma pequena mostra cultural. Inclua o documento no corredor e o problema um atraso no transporte. Texto:"
+```
 
 O pedido público tem contrato fechado: deve manter exatamente a ordem dos
 campos mostrada acima, terminar com `Texto:` e usar somente palavras do
@@ -190,11 +208,11 @@ rejeitado. Uma menção a outro objeto em outro local não causa falso positivo.
 <!-- metricas-desempenho:inicio -->
 | Medição | Resultado |
 |---|---:|
-| Forward paralelo, lote 16 × contexto 640 | 111.834,05 tokens/s |
-| Pico de VRAM no forward | 88,46 MiB |
-| Geração autorregressiva real | 94,48 tokens/s |
-| Latência até o primeiro token | 5,58 ms |
-| Tempo do relato completo | 5,18 s |
+| Forward paralelo, lote 16 × contexto 640 | 144.957,06 tokens/s |
+| Pico de VRAM no forward | 83,42 MiB |
+| Geração autorregressiva real | 314,99 tokens/s |
+| Latência até o primeiro token | 4,50 ms |
+| Tempo do relato completo | 1,55 s |
 <!-- metricas-desempenho:fim -->
 
 O relatório completo está em
@@ -233,16 +251,16 @@ python validar_comparacao_esparso_denso.py --resultados resultados/minha_compara
 | Uso de retentativa | 12,50% | 8,33% | denso |
 | Tempo das cinco épocas | 1.663,30 s | 281,09 s | denso |
 | Pico de VRAM no treino | 1.898,33 MiB | 950,36 MiB | denso |
-| Forward paralelo | 121.398,23 tokens/s | 1.537.708,78 tokens/s | denso |
-| Pico de VRAM no forward | 90,09 MiB | 122,21 MiB | esparso |
-| Geração autorregressiva | 92,22 tokens/s | 506,44 tokens/s | denso |
-| Primeiro token | 11,95 ms | 2,07 ms | denso |
+| Forward paralelo atual | 144.957,06 tokens/s | 1.537.708,78 tokens/s | denso |
+| Pico de VRAM no forward atual | 83,42 MiB | 122,21 MiB | esparso |
+| Geração autorregressiva atual | 314,99 tokens/s | 506,44 tokens/s | denso |
+| Primeiro token atual | 4,50 ms | 2,07 ms | denso |
 | Checkpoint | 662,32 KiB | 658,82 KiB | equivalente |
 
-Conclusão: a vantagem prática esparsa não foi sustentada neste protocolo. A
-baseline densa preservou a qualidade, treinou 5,92× mais rápido, reduziu a VRAM
-de treino em 49,94%, fez forward 12,67× mais rápido e gerou 5,49× mais rápido.
-O esparso venceu no pico de VRAM do forward, usando 26,29% menos memória.
+Conclusão atual: a baseline densa preservou a qualidade, treinou 5,92× mais
+rápido, reduziu a VRAM de treino em 49,94%, fez o forward 10,61× mais rápido e
+gerou 1,61× mais rápido. A V6.2 reduziu substancialmente a diferença de geração
+e venceu no pico de VRAM do forward, usando 31,74% menos memória.
 
 Essa conclusão é específica deste domínio, hardware e implementação PyTorch;
 não demonstra superioridade universal de arquiteturas densas.
@@ -253,9 +271,65 @@ Artefatos completos:
 - `resultados/comparacao_esparso_denso_50k/COMPARACAO.md`;
 - relatórios individuais, 24 textos por modelo e cinco checkpoints densos.
 
+## V6.2 base: cache causal e CSR
+
+A V6.2 é o runtime-base oficial e mantém em buffers prealocados:
+
+- as chaves esparsas já projetadas;
+- os estados normalizados usados como valores;
+- os tokens da janela causal ativa.
+
+Cada token novo calcula apenas sua consulta, sua chave e o caminho residual
+correspondente. Pesos, Q/K COO, Top-32, FFN COO, Top-64, gates, normalizações e
+classificador continuam idênticos ao checkpoint treinado. Em inferência, cada
+matriz COO é convertida uma única vez para CSR, eliminando a conversão interna
+repetida do cuSPARSE, e os sete gates escalares são reutilizados enquanto seus
+parâmetros não mudam. O runtime não acrescenta parâmetros. Quando a janela
+ultrapassa 640 tokens, ela é refeita para preservar exatamente a convenção
+posicional da referência.
+
+O experimento completo pode ser repetido em um novo diretório:
+
+```powershell
+python experimentar_v62_cache.py --resultados resultados/minha_v62
+```
+
+Resultado oficial revalidado na RTX 3050:
+
+| Métrica autorregressiva | Referência sem cache | V6.2 base |
+|---|---:|---:|
+| Velocidade | 92,22 tokens/s | 314,99 tokens/s |
+| Tempo de 489 tokens | aproximadamente 5,30 s | 1,55 s |
+| Primeiro token | 11,95 ms | 4,50 ms |
+| Pico de VRAM no forward | 90,09 MiB | 83,42 MiB |
+| Caracteres | 2.840 | 2.840 |
+
+A geração ficou **3,42× mais rápida** que a referência original e 40,7% mais
+rápida que a primeira implementação V6.2 de 223,82 tokens/s. A PPL atual é
+`1,050526398`; as 24 gerações foram aprovadas e permaneceram textualmente
+idênticas às saídas oficiais. No relatório isolado, a maior diferença numérica
+de logits foi `7,63e-6`, abaixo da tolerância de `2e-5`.
+
+A V6.2 ainda não supera os 506,44 tokens/s da baseline densa e não muda o
+treino já executado. O checkpoint oficial não foi sobrescrito: a promoção é
+exclusivamente do runtime seguro que o carrega.
+
+Outras variantes foram testadas e rejeitadas:
+
+- `torch.compile`: indisponível sem uma instalação Triton funcional no Windows;
+- FP16: apenas 2,1% mais rápido e diferença de logits `0,00952`, acima da
+  tolerância;
+- FFN seletiva por `scatter_add`: 3,1% mais lenta e com mais VRAM.
+
+Relatório e texto auditável:
+
+- `resultados/v62_base_runtime/relatorio.json`;
+- `resultados/v62_base_runtime/texto_benchmark.txt`.
+
 ## Principais módulos
 
 - `src/modelo_gerador_esparso.py`: arquitetura causal esparsa;
+- `src/modelo_gerador_esparso_v62.py`: runtime-base com cache causal e CSR;
 - `src/modelo_gerador_denso.py`: baseline densa experimental equivalente;
 - `src/camada_linear_esparsa.py`: projeção treinável COO, com índices
   coalescidos e cache seguro de inferência;
@@ -265,6 +339,8 @@ Artefatos completos:
   telemetria;
 - `treinar_gerador_esparso.py`: treino, avaliação e checkpoints;
 - `executar_gerador_esparso.py`: inferência pelo checkpoint oficial;
+- `executar_v62_cache.py`: alias explícito da inferência V6.2-base;
+- `experimentar_v62_cache.py`: equivalência, PPL, geração e benchmark V6.2;
 - `validar_gerador_esparso.py`: revalidação independente e adversarial;
 - `comparar_esparso_denso.py`: protocolo de treino e comparação justa;
 - `validar_comparacao_esparso_denso.py`: recarga e revalidação independente;
@@ -296,6 +372,9 @@ AI-Esparsa/
       epoca_04.pt
       epoca_05.pt
       relatorio.json
+    v62_base_runtime/
+      relatorio.json
+      texto_benchmark.txt
   src/
     __init__.py
     camada_linear_esparsa.py
@@ -304,6 +383,7 @@ AI-Esparsa/
     documentacao_metricas.py
     modelo_gerador_denso.py
     modelo_gerador_esparso.py
+    modelo_gerador_esparso_v62.py
     tokenizador_palavras.py
     versao.py
   testes/
@@ -313,11 +393,14 @@ AI-Esparsa/
     test_gpu_gerador.py
     test_modelo_gerador_denso.py
     test_modelo_gerador_esparso.py
+    test_modelo_gerador_esparso_v62.py
     test_pipeline_gerador_esparso.py
   pyproject.toml
   requirements.txt
   comparar_esparso_denso.py
   executar_gerador_esparso.py
+  executar_v62_cache.py
+  experimentar_v62_cache.py
   promover_gerador_esparso.py
   treinar_gerador_esparso.py
   validar_gerador_esparso.py

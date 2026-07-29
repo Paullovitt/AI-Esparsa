@@ -20,6 +20,7 @@ from src.modelo_gerador_esparso import (
     ConfiguracaoGeradorEsparso,
     ModeloGeradorEsparso,
 )
+from src.modelo_gerador_esparso_v62 import ModeloGeradorEsparsoV62
 from src.tokenizador_palavras import TokenizadorPalavras
 from treinar_gerador_esparso import (
     gerar_relato_validado,
@@ -43,6 +44,8 @@ PROMPT_PADRAO = (
 def carregar_gerador(
     caminho: Path,
     dispositivo: torch.device,
+    *,
+    classe_modelo: type[ModeloGeradorEsparso] = ModeloGeradorEsparso,
 ) -> tuple[
     ModeloGeradorEsparso,
     TokenizadorPalavras,
@@ -69,7 +72,9 @@ def carregar_gerador(
     configuracao = ConfiguracaoGeradorEsparso(
         **checkpoint["configuracao"]
     )
-    modelo = ModeloGeradorEsparso(
+    # A injecao da classe permite runtimes experimentais sem alterar o
+    # carregamento seguro nem o executor oficial, cujo padrao segue V6.1.
+    modelo = classe_modelo(
         tokenizador.tamanho,
         tokenizador.pad_id,
         configuracao,
@@ -108,6 +113,7 @@ def main() -> None:
     modelo, tokenizador, _ = carregar_gerador(
         args.checkpoint,
         dispositivo,
+        classe_modelo=ModeloGeradorEsparsoV62,
     )
     campos = validar_prompt_publico(args.prompt, tokenizador)
     if not args.amostrar:

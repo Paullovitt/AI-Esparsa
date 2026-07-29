@@ -17,6 +17,7 @@ from executar_gerador_esparso import (
     carregar_gerador,
 )
 from src.documentacao_metricas import sincronizar_metricas_documentacao
+from src.modelo_gerador_esparso_v62 import ModeloGeradorEsparsoV62
 from src.tokenizador_palavras import TokenizadorPalavras
 from src.versao import VERSAO_PROJETO
 from treinar_gerador_esparso import (
@@ -103,6 +104,7 @@ def main() -> None:
     modelo, tokenizador, checkpoint = carregar_gerador(
         CHECKPOINT_VALIDACAO,
         dispositivo,
+        classe_modelo=ModeloGeradorEsparsoV62,
     )
     _, _, teste = gerar_divisoes_gerador()
     codificados_teste = codificar_registros(teste, tokenizador)

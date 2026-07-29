@@ -8,6 +8,7 @@ from pathlib import Path
 import torch
 
 from executar_gerador_esparso import carregar_gerador
+from src.modelo_gerador_esparso_v62 import ModeloGeradorEsparsoV62
 
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -20,6 +21,7 @@ class TesteGPUGerador(unittest.TestCase):
         modelo, tokenizador, _ = carregar_gerador(
             RAIZ / "modelos" / "gerador_esparso_base.pt",
             dispositivo,
+            classe_modelo=ModeloGeradorEsparsoV62,
         )
         entrada = torch.tensor(
             [tokenizador.codificar("pedido: texto:", eos=False)],
@@ -29,6 +31,7 @@ class TesteGPUGerador(unittest.TestCase):
             logits, _ = modelo(entrada)
         self.assertEqual(logits.device.type, "cuda")
         self.assertTrue(torch.isfinite(logits).all())
+        self.assertTrue(modelo.auditoria()["cache_linear_csr"])
 
 
 if __name__ == "__main__":

@@ -10,6 +10,9 @@ Seu objetivo é produzir relatos procedurais longos condicionados por campos
 explícitos de um pedido. Uma baseline densa existe exclusivamente como
 controle experimental autorizado e não altera o checkpoint oficial.
 
+O runtime-base oficial é a V6.2. Ele reutiliza os pesos treinados e acrescenta
+cache causal incremental, cache linear CSR e cache dos gates escalares.
+
 Checkpoint oficial:
 
 `modelos/gerador_esparso_base.pt`
@@ -126,11 +129,11 @@ distratores e não reprovam um texto válido.
 A revalidação separa métricas com significados diferentes:
 
 <!-- metricas-desempenho:inicio -->
-- forward paralelo, lote 16 e contexto 640: 111.834,05 tokens/s,
-  91,56 ms e pico de 88,46 MiB;
-- geração autorregressiva de um relato: 94,48 tokens/s;
-- latência até o primeiro token: 5,58 ms;
-- tempo total para 489 tokens e 2.840 caracteres: 5,18 s.
+- forward paralelo, lote 16 e contexto 640: 144.957,06 tokens/s,
+  70,64 ms e pico de 83,42 MiB;
+- geração autorregressiva de um relato: 314,99 tokens/s;
+- latência até o primeiro token: 4,50 ms;
+- tempo total para 489 tokens e 2.840 caracteres: 1,55 s.
 <!-- metricas-desempenho:fim -->
 
 O teste oficial foi executado em Windows 11, Python 3.14.0,
@@ -162,17 +165,61 @@ baseline densa foi treinada do zero, com cinco checkpoints separados.
 | Aprovação/recuperação | 100% / 100% | 100% / 100% |
 | Tempo de treino | 1.663,30 s | 281,09 s |
 | Pico de VRAM no treino | 1.898,33 MiB | 950,36 MiB |
-| Forward | 121.398,23 tokens/s | 1.537.708,78 tokens/s |
-| Pico de VRAM no forward | 90,09 MiB | 122,21 MiB |
-| Geração autorregressiva | 92,22 tokens/s | 506,44 tokens/s |
-| Primeiro token | 11,95 ms | 2,07 ms |
+| Forward atual | 144.957,06 tokens/s | 1.537.708,78 tokens/s |
+| Pico de VRAM no forward atual | 83,42 MiB | 122,21 MiB |
+| Geração autorregressiva atual | 314,99 tokens/s | 506,44 tokens/s |
+| Primeiro token atual | 4,50 ms | 2,07 ms |
 
 A baseline densa empatou em aprovação e recuperação, obteve PPL ligeiramente
-menor e venceu tempo de treino, VRAM de treino, forward e geração. O modelo
-esparso venceu somente a memória de forward entre as métricas principais.
-Logo, os dados não sustentam superioridade prática do esparso nesta
-implementação. A revalidação independente reproduziu a PPL densa com erro
-absoluto de `8,96e-8` e aprovou novamente as 24 gerações.
+menor e venceu tempo de treino, VRAM de treino, forward e geração. A diferença
+de geração caiu de 5,49 para 1,61 vezes com a V6.2; o esparso manteve a
+vantagem de memória no forward, agora de 31,74%. Logo, os dados ainda não
+sustentam superioridade prática geral do esparso. A revalidação independente
+reproduziu a PPL densa com erro absoluto de `8,96e-8` e aprovou novamente as
+24 gerações.
+
+## Runtime-base V6.2
+
+A V6.2 preserva integralmente o estado treinado, a topologia COO, a atenção
+causal Top-32, a FFN COO Top-64, os residuais, os gates e as normalizações. Ela
+adiciona um caminho incremental para geração:
+
+1. o prompt executa um prefill completo;
+2. cada camada armazena chaves e valores causais em buffers prealocados;
+3. cada token seguinte projeta somente o estado novo;
+4. a consulta nova seleciona Top-32 no prefixo cacheado;
+5. ao preencher 640 posições, a janela é refeita para preservar a posição
+   senoidal e o comportamento exato da referência.
+6. as matrizes COO imutáveis são materializadas uma vez em CSR na inferência;
+7. os sete gates escalares são reutilizados enquanto os parâmetros não mudam.
+
+O runtime não possui parâmetros adicionais e carrega
+`modelos/gerador_esparso_base.pt` com `weights_only=True` e recarga estrita.
+Não houve novo treino nem criação de checkpoint. A V6.2 foi promovida somente
+como runtime-base e o SHA-256 dos pesos permaneceu
+`daba162081b351fe44bd9179c7a4f5ec374e691841d12774789916f846ac215f`.
+
+Na RTX 3050, uma geração determinística de 489 tokens e 2.840 caracteres
+passou de 92,22 para 314,99 tokens/s, aceleração de 3,42 vezes. O tempo do
+relato completo caiu para 1,55 segundo e o primeiro token para 4,50 ms. O
+forward atual atingiu 144.957,06 tokens/s e 83,42 MiB.
+
+A PPL V6.2 foi `1,050526398`. A maior diferença numérica entre logits
+incrementais e a referência no relatório isolado foi `7,63e-6`, abaixo da
+tolerância `2e-5`. As 24 gerações passaram novamente e ficaram textualmente
+idênticas às saídas oficiais.
+
+A V6.2 ainda não supera a geração densa de 506,44 tokens/s nem altera o custo
+do treino já executado. Testes com FP16 e FFN seletiva foram rejeitados por
+divergência acima da tolerância ou regressão de desempenho. `torch.compile`
+não executou porque não existe uma instalação Triton funcional neste Windows.
+
+Artefatos:
+
+- `src/modelo_gerador_esparso_v62.py`;
+- `executar_v62_cache.py`;
+- `experimentar_v62_cache.py`;
+- `resultados/v62_base_runtime/relatorio.json`.
 
 ## Limite de validade
 

@@ -10,6 +10,8 @@ Antes de modificar, treinar ou otimizar o modelo, leia integralmente:
 Regras obrigatorias:
 
 - o Gerador Esparso Coerente e o unico modelo oficial do projeto;
+- o runtime-base ativo e a V6.2 com cache causal, CSR de inferencia e gates
+  cacheados;
 - a baseline densa e somente um controle experimental autorizado;
 - nunca promover a baseline densa sem nova autorizacao explicita;
 - o checkpoint oficial e `modelos/gerador_esparso_base.pt`;
