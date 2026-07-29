@@ -74,6 +74,27 @@ class TokenizadorPalavras:
             + ([self.eos_id] if eos else [])
         )
 
+    def tokens_desconhecidos(self, texto: str) -> list[str]:
+        """Lista tokens fora do vocabulário sem duplicar ocorrências."""
+
+        desconhecidos: list[str] = []
+        vistos: set[str] = set()
+        for token in self.tokenizar(texto):
+            if token not in self.token_para_id and token not in vistos:
+                desconhecidos.append(token)
+                vistos.add(token)
+        return desconhecidos
+
+    def validar_texto_no_vocabulario(self, texto: str) -> None:
+        """Rejeita entradas que perderiam informação ao virar ``<unk>``."""
+
+        desconhecidos = self.tokens_desconhecidos(texto)
+        if desconhecidos:
+            raise ValueError(
+                "tokens fora do vocabulario fechado: "
+                + ", ".join(desconhecidos)
+            )
+
     def decodificar(self, ids: Iterable[int]) -> str:
         tokens: list[str] = []
         for token_id in ids:

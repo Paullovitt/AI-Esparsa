@@ -1,6 +1,7 @@
 ﻿"""Decodificacao causal com bloqueio de repeticao e encerramento de frase."""
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -97,12 +98,17 @@ def gerar_controlado(
     configuracao: ConfiguracaoDecodificacao = ConfiguracaoDecodificacao(),
     amostrar: bool = False,
     semente: int = 20260807,
+    metricas_desempenho: dict[str, float] | None = None,
 ) -> str:
     """Gera uma continuacao sem repetir n-gramas e encerra na primeira frase."""
     modelo.eval()
     ids = tokenizador.codificar(prompt, eos=False)
     continuacao: list[int] = []
     gerador = torch.Generator(device=dispositivo).manual_seed(semente)
+    if dispositivo.type == "cuda":
+        torch.cuda.synchronize(dispositivo)
+    inicio = time.perf_counter()
+    instante_primeiro_token: float | None = None
 
     for _ in range(configuracao.maximo_tokens):
         entrada = torch.tensor(
@@ -126,6 +132,10 @@ def gerar_controlado(
 
         ids.append(proximo)
         continuacao.append(proximo)
+        if instante_primeiro_token is None:
+            if dispositivo.type == "cuda":
+                torch.cuda.synchronize(dispositivo)
+            instante_primeiro_token = time.perf_counter()
         if proximo == tokenizador.eos_id or _encerrou_frase(
             tokenizador,
             continuacao,
@@ -133,4 +143,26 @@ def gerar_controlado(
         ):
             break
 
+    if dispositivo.type == "cuda":
+        torch.cuda.synchronize(dispositivo)
+    fim = time.perf_counter()
+    if metricas_desempenho is not None:
+        duracao = max(fim - inicio, 1e-12)
+        quantidade = len(continuacao)
+        metricas_desempenho.update(
+            {
+                "tokens_gerados": float(quantidade),
+                "tempo_total_segundos": duracao,
+                "latencia_primeiro_token_ms": (
+                    (
+                        (instante_primeiro_token or fim) - inicio
+                    )
+                    * 1000.0
+                ),
+                "latencia_media_token_ms": (
+                    duracao * 1000.0 / max(1, quantidade)
+                ),
+                "tokens_por_segundo": quantidade / duracao,
+            }
+        )
     return tokenizador.decodificar(ids)

@@ -18,6 +18,9 @@ Regras obrigatorias:
 - todo experimento de treino deve usar cinco epocas;
 - salvar cada epoca em checkpoint separado;
 - comparar PPL, geracao livre, recuperacao, velocidade e VRAM;
+- separar throughput de forward e velocidade autorregressiva percebida;
+- salvar no relatorio todas as 24 geracoes usadas na aprovacao;
+- rejeitar prompts publicos fora do formato ou com tokens desconhecidos;
 - qualquer kernel novo deve provar equivalencia com a referencia PyTorch;
 - atualizar README, documento tecnico, status e testes apos mudancas;
 - usar o ambiente CUDA existente sem instalar dependencias desnecessarias;

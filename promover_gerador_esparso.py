@@ -1,7 +1,7 @@
 """Promove um experimento aprovado para o checkpoint-base oficial.
 
 A promoção é deliberadamente separada do treino: primeiro o relatório precisa
-passar por revalidação e somente depois o checkpoint da época 5 é copiado. A
+passar por revalidação e somente depois o checkpoint da época 5 é copiado.
 O checkpoint oficial nunca é sobrescrito automaticamente.
 
 Autor: Paulo Augusto
@@ -63,6 +63,28 @@ def validar_promocao(
         ),
         "criterios_completos": bool(criterios)
         and all(bool(valor) for valor in criterios.values()),
+        "validador_v2": (
+            relatorio.get("revalidacao", {}).get("versao_validador")
+            == "2.0.0"
+        ),
+        "vinte_quatro_saidas_auditaveis": (
+            len(
+                relatorio.get("geracao_livre", {}).get(
+                    "exemplos",
+                    [],
+                )
+            )
+            == 24
+        ),
+        "benchmark_autorregressivo": (
+            float(
+                relatorio.get(
+                    "desempenho_autorregressivo",
+                    {},
+                ).get("tokens_por_segundo", 0.0)
+            )
+            > 0.0
+        ),
         "geracao_2k": (
             int(
                 relatorio.get("geracao_livre", {}).get(

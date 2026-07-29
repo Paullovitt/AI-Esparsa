@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import unittest
 from pathlib import Path
 
@@ -20,6 +21,7 @@ from treinar_gerador_esparso import (
     gerar_registro_extenso,
     local_do_objeto_consistente,
     problema_recuperado,
+    validar_prompt_publico,
 )
 from src.corpus_gerador_esparso import PESSOAS
 
@@ -89,6 +91,27 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
                 contraditorio,
             )
         )
+        self.assertFalse(
+            local_do_objeto_consistente(
+                "livro",
+                "sala",
+                (
+                    "o livro foi levado para o deposito, mas o livro "
+                    "continuava na sala."
+                ),
+            )
+        )
+        self.assertTrue(
+            local_do_objeto_consistente(
+                "relatorio",
+                "cozinha",
+                (
+                    "o documento foi levado para o escritorio, sem "
+                    "interferir no local reservado para o relatorio. "
+                    "o relatorio ficou na cozinha."
+                ),
+            )
+        )
         self.assertTrue(
             acoes_consistentes(
                 "o primeiro passo foi mover as caixas para uma area segura."
@@ -110,6 +133,42 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
         self.assertNotIn("posicao de a ", textos)
         self.assertIn("disposta a colaborar", textos)
         self.assertIn("disposto a colaborar", textos)
+        for registro in treino:
+            principal = str(registro["palavras_chave"][2])
+            correspondencia = re.search(
+                r"Em outra parte do ambiente, (?:o|a) (\w+) foi",
+                str(registro["historia"]),
+            )
+            self.assertIsNotNone(correspondencia)
+            self.assertNotEqual(principal, correspondencia.group(1))
+
+    def test_prompt_oov_ou_fora_do_formato_e_rejeitado(self) -> None:
+        treino, _, _ = gerar_divisoes_gerador(
+            (10, 1, 1),
+            (71_000, 72_000, 73_000),
+        )
+        tokenizador = TokenizadorPalavras(
+            str(registro["texto"]) for registro in treino
+        )
+        with self.assertRaisesRegex(ValueError, "formato estruturado"):
+            validar_prompt_publico("escreva qualquer coisa", tokenizador)
+        desconhecido = (
+            "Pedido: escreva um relato sobre joão, com ajuda de pedro, "
+            "para lançar um foguete. Inclua o telescópio no laboratório "
+            "e o problema um vazamento de gás. Texto:"
+        )
+        with self.assertRaisesRegex(ValueError, "joão.*pedro.*foguete"):
+            validar_prompt_publico(desconhecido, tokenizador)
+        pessoa, ajudante, tarefa, objeto, local, problema = (
+            treino[0]["chave"][:6]
+        )
+        ordem_invalida = (
+            f"Pedido: escreva um relato sobre {pessoa}, com ajuda de "
+            f"{ajudante}, para {tarefa}. Inclua o {local} no {objeto} "
+            f"e o problema {problema}. Texto:"
+        )
+        with self.assertRaisesRegex(ValueError, "formato estruturado"):
+            validar_prompt_publico(ordem_invalida, tokenizador)
 
     def test_relato_extenso_supera_dois_mil_caracteres(self) -> None:
         registro = gerar_registro_extenso(40_000_000)
@@ -262,6 +321,39 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
             relatorio["geracao_livre"]["caracteres_minimos"],
             2_000,
         )
+        self.assertEqual(
+            len(relatorio["geracao_livre"]["exemplos"]),
+            24,
+        )
+        for exemplo in relatorio["geracao_livre"]["exemplos"]:
+            campos = extrair_campos_pedido(str(exemplo["pedido"]))
+            self.assertIsNotNone(campos)
+            self.assertTrue(
+                local_do_objeto_consistente(
+                    campos[2],
+                    campos[3],
+                    str(exemplo["texto"]),
+                )
+            )
+        self.assertGreater(
+            relatorio["desempenho_autorregressivo"][
+                "tokens_por_segundo"
+            ],
+            0.0,
+        )
+        self.assertEqual(
+            relatorio["revalidacao"]["versao_validador"],
+            "2.0.0",
+        )
+        validar_promocao(
+            torch.load(
+                CHECKPOINT,
+                map_location="cpu",
+                weights_only=True,
+            ),
+            relatorio,
+        )
+
     def test_repositorio_mantem_um_unico_modelo(self) -> None:
         """Impede a reintrodução acidental das arquiteturas removidas."""
 

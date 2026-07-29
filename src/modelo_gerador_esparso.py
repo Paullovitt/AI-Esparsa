@@ -33,6 +33,7 @@ class ConfiguracaoGeradorEsparso:
     fan_out_ffn: int = 48
     top_k_ffn: int = 64
     maximo_contexto: int = 640
+    bloco_consultas_atencao: int = 32
 
     def validar(self) -> None:
         if self.dimensao <= 0 or self.camadas <= 0:
@@ -47,6 +48,8 @@ class ConfiguracaoGeradorEsparso:
             raise ValueError("fan_out_ffn invalido")
         if not 0 < self.top_k_ffn <= self.especialistas:
             raise ValueError("top_k_ffn invalido")
+        if not 0 < self.bloco_consultas_atencao <= self.maximo_contexto:
+            raise ValueError("bloco_consultas_atencao invalido")
 
 
 def codificacao_senoidal(comprimento: int, dimensao: int) -> Tensor:
@@ -209,37 +212,72 @@ class BlocoGeradorEsparso(nn.Module):
         return camada(estados.reshape(-1, forma[-1])).view(*forma)
 
     def _atencao_top_k(self, estados: Tensor) -> Tensor:
+        """Calcula o Top-K global em blocos sem matrizes completas T x T."""
+
         normalizados = self.normalizacao_atencao(estados)
         consultas = self._projetar(self.consulta, normalizados)
         chaves = self._projetar(self.chave, normalizados)
-        pontuacoes = torch.bmm(
-            consultas,
-            chaves.transpose(1, 2),
-        ) / math.sqrt(self.configuracao.dimensao)
-
         comprimento = estados.shape[1]
-        mascara_causal = torch.ones(
-            comprimento,
-            comprimento,
-            dtype=torch.bool,
-            device=estados.device,
-        ).tril()
-        pontuacoes = pontuacoes.masked_fill(
-            ~mascara_causal.unsqueeze(0),
-            -torch.inf,
-        )
         quantidade = min(self.configuracao.top_k_atencao, comprimento)
-        valores, indices = pontuacoes.topk(
-            quantidade,
-            dim=-1,
-            sorted=False,
+        chaves_transpostas = chaves.transpose(1, 2)
+        posicoes_chave = torch.arange(
+            comprimento,
+            device=estados.device,
         )
-        pesos_top = torch.softmax(valores, dim=-1)
-        # A matriz de pesos continua Top-K; a forma densa evita materializar
-        # [lote, tempo, Top-K, dimensao] durante o produto com os valores.
-        pesos = torch.zeros_like(pontuacoes)
-        pesos.scatter_(-1, indices, pesos_top)
-        return torch.bmm(pesos, normalizados)
+        contextos: list[Tensor] = []
+
+        for inicio in range(
+            0,
+            comprimento,
+            self.configuracao.bloco_consultas_atencao,
+        ):
+            fim = min(
+                inicio + self.configuracao.bloco_consultas_atencao,
+                comprimento,
+            )
+            consultas_bloco = consultas[:, inicio:fim]
+            pontuacoes = torch.bmm(
+                consultas_bloco,
+                chaves_transpostas,
+            ) / math.sqrt(self.configuracao.dimensao)
+            posicoes_consulta = torch.arange(
+                inicio,
+                fim,
+                device=estados.device,
+            ).unsqueeze(1)
+            mascara_causal = (
+                posicoes_chave.unsqueeze(0) <= posicoes_consulta
+            )
+            pontuacoes.masked_fill_(
+                ~mascara_causal.unsqueeze(0),
+                -torch.inf,
+            )
+            valores, indices = pontuacoes.topk(
+                quantidade,
+                dim=-1,
+                sorted=False,
+            )
+            pesos = torch.softmax(valores, dim=-1)
+            estados_expandidos = normalizados.unsqueeze(1).expand(
+                -1,
+                fim - inicio,
+                -1,
+                -1,
+            )
+            selecionados = torch.gather(
+                estados_expandidos,
+                2,
+                indices.unsqueeze(-1).expand(
+                    -1,
+                    -1,
+                    -1,
+                    normalizados.shape[-1],
+                ),
+            )
+            contextos.append(
+                (selecionados * pesos.unsqueeze(-1)).sum(dim=2)
+            )
+        return torch.cat(contextos, dim=1)
 
     def forward(self, estados: Tensor) -> Tensor:
         contexto = self._atencao_top_k(estados)
@@ -351,6 +389,12 @@ class ModeloGeradorEsparso(nn.Module):
             ),
             "camadas": self.configuracao.camadas,
             "atencao_causal_top_k": self.configuracao.top_k_atencao,
+            "atencao_top_k_em_blocos": True,
+            "bloco_consultas_atencao": (
+                self.configuracao.bloco_consultas_atencao
+            ),
+            "memoria_escores_tempo_quadratica": False,
+            "computacao_escores_tempo_quadratica": True,
             "qk_coo": True,
             "conexoes_qk": conexoes_qk,
             "densidade_qk": conexoes_qk / conexoes_qk_densas,

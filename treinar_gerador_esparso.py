@@ -504,15 +504,44 @@ def local_do_objeto_consistente(
 
     tokens = TokenizadorPalavras.tokenizar(continuacao.lower())
     locais = {local for _, local in LOCAIS_LONGOS}
+    verbos_relacao = {
+        "colocou",
+        "colocado",
+        "colocada",
+        "levou",
+        "levado",
+        "levada",
+        "guardou",
+        "guardado",
+        "guardada",
+        "deixou",
+        "ficou",
+        "estava",
+        "permaneceu",
+        "permanecia",
+        "continuou",
+        "continuava",
+        "seguia",
+    }
+    delimitadores = {".", ";", ":", "!", "?", ",", "mas", "enquanto"}
     encontrou_relacao = False
     for indice, token in enumerate(tokens):
         if token != objeto:
             continue
-        proximos = tokens[indice + 1 : indice + 5]
-        locais_proximos = locais.intersection(proximos)
-        if locais_proximos - {local_esperado}:
+        inicio = indice
+        while inicio > 0 and tokens[inicio - 1] not in delimitadores:
+            inicio -= 1
+        fim = indice + 1
+        while fim < len(tokens) and tokens[fim] not in delimitadores:
+            fim += 1
+        clausula = tokens[inicio:fim]
+        depois_objeto = tokens[indice + 1 : fim]
+        if not verbos_relacao.intersection(clausula):
+            continue
+        locais_relacionados = locais.intersection(depois_objeto)
+        if locais_relacionados - {local_esperado}:
             return False
-        encontrou_relacao |= local_esperado in locais_proximos
+        encontrou_relacao |= local_esperado in locais_relacionados
     return encontrou_relacao
 
 
@@ -551,12 +580,13 @@ def acoes_consistentes(continuacao: str) -> bool:
 
 
 PADRAO_PEDIDO = re.compile(
-    r"sobre\s+(?P<pessoa>[^,]+),\s*"
+    r"^\s*pedido:\s*escreva um relato sobre\s+"
+    r"(?P<pessoa>[^,]+),\s*"
     r"com ajuda de\s+(?P<ajudante>[^,]+),\s*"
-    r"para\s+.+?\.\s*"
+    r"para\s+(?P<tarefa>.+?)\.\s*"
     r"inclua\s+(?:o|a)\s+(?P<objeto>\w+)\s+"
     r"(?:na|no)\s+(?P<local>\w+)\s+"
-    r"e o problema\s+(?P<problema>.+?)\.\s*texto:",
+    r"e o problema\s+(?P<problema>.+?)\.\s*texto:\s*$",
     flags=re.IGNORECASE,
 )
 
@@ -564,7 +594,7 @@ PADRAO_PEDIDO = re.compile(
 def extrair_campos_pedido(prompt: str) -> list[str] | None:
     """Extrai os cinco campos verificaveis do formato publico do gerador."""
 
-    correspondencia = PADRAO_PEDIDO.search(prompt)
+    correspondencia = PADRAO_PEDIDO.fullmatch(prompt)
     if correspondencia is None:
         return None
     return [
@@ -574,6 +604,45 @@ def extrair_campos_pedido(prompt: str) -> list[str] | None:
         correspondencia.group("local").strip().lower(),
         correspondencia.group("problema").strip().lower(),
     ]
+
+
+def validar_prompt_publico(
+    prompt: str,
+    tokenizador: TokenizadorPalavras,
+) -> list[str]:
+    """Valida formato e vocabulário antes de iniciar geração custosa."""
+
+    campos = extrair_campos_pedido(prompt)
+    if campos is None:
+        raise ValueError(
+            "prompt fora do formato estruturado documentado"
+        )
+    # O erro de vocabulário deve listar os tokens em vez de mascará-los como
+    # uma simples incompatibilidade de domínio.
+    tokenizador.validar_texto_no_vocabulario(prompt)
+    correspondencia = PADRAO_PEDIDO.fullmatch(prompt)
+    if correspondencia is None:  # Coberto por extrair_campos_pedido.
+        raise ValueError("prompt fora do formato estruturado documentado")
+    pessoa, ajudante, objeto, local, problema = campos
+    tarefa = correspondencia.group("tarefa").strip().lower()
+    pessoas_validas = {nome for nome, _ in PESSOAS}
+    objetos_validos = {nome for _, nome, _ in OBJETOS}
+    locais_validos = {nome for _, nome in LOCAIS_LONGOS}
+    problemas_validos = {nome for nome, _ in PROBLEMAS}
+    if (
+        pessoa not in pessoas_validas
+        or ajudante not in pessoas_validas
+        or pessoa == ajudante
+        or tarefa not in TAREFAS
+        or objeto not in objetos_validos
+        or local not in locais_validos
+        or problema not in problemas_validos
+    ):
+        raise ValueError(
+            "prompt fora do formato estruturado: campo em categoria "
+            "invalida para o dominio treinado"
+        )
+    return campos
 
 
 def _medir_continuacao(
@@ -639,6 +708,7 @@ def gerar_relato_validado(
 ) -> tuple[str, dict[str, object]]:
     """Usa o greedy e recorre a baixa amostragem somente se houver conflito."""
 
+    tokenizador.validar_texto_no_vocabulario(prompt)
     configuracao = ConfiguracaoDecodificacao(
         maximo_tokens=500,
         minimo_tokens_frase=300,
@@ -825,10 +895,10 @@ def avaliar_geracao_livre(
             int(item["frequencia_maxima_trigrama"])
             for item in resultados
         ),
-        "exemplos": resultados[:6],
+        "exemplos": resultados,
         "falhas": [
             item for item in resultados if not bool(item["aprovado"])
-        ][:8],
+        ],
     }
 
 
@@ -837,8 +907,8 @@ def benchmark(
     modelo: ModeloGeradorEsparso,
     vocabulario: int,
     dispositivo: torch.device,
-) -> dict[str, float]:
-    """Mede o forward de forma sincronizada na GPU."""
+) -> dict[str, float | str]:
+    """Mede somente o forward paralelo de forma sincronizada na GPU."""
 
     modelo.eval()
     entradas = torch.randint(
@@ -858,10 +928,55 @@ def benchmark(
     torch.cuda.synchronize()
     duracao = time.perf_counter() - inicio
     return {
+        "tipo": "forward_paralelo_lote_16_contexto_completo",
         "tokens_por_segundo": entradas.numel() * repeticoes / duracao,
         "latencia_ms": duracao * 1000.0 / repeticoes,
         "vram_pico_mib": (
             torch.cuda.max_memory_allocated() / 1024**2
+        ),
+    }
+
+
+@torch.inference_mode()
+def benchmark_autorregressivo(
+    modelo: ModeloGeradorEsparso,
+    tokenizador: TokenizadorPalavras,
+    prompt: str,
+    dispositivo: torch.device,
+) -> dict[str, float | str]:
+    """Mede uma geração completa, incluindo latência do primeiro token."""
+
+    metricas: dict[str, float] = {}
+    texto = gerar_controlado(
+        modelo,
+        tokenizador,
+        prompt,
+        dispositivo,
+        configuracao=ConfiguracaoDecodificacao(
+            maximo_tokens=500,
+            minimo_tokens_frase=300,
+            ngrama_bloqueado=0,
+            penalidade_repeticao=0.0,
+            janela_penalidade=14,
+            temperatura=0.58,
+            top_k_amostragem=5,
+            parar_apos_frase=True,
+            frases_para_encerrar=FRASES_GERACAO,
+            bloquear_trigrama_adicional=False,
+        ),
+        amostrar=False,
+        metricas_desempenho=metricas,
+    )
+    continuacao = extrair_continuacao(texto)
+    return {
+        "tipo": "geracao_autorregressiva_relato_completo",
+        **metricas,
+        "caracteres_gerados": float(len(continuacao)),
+        "frases_geradas": float(
+            sum(
+                token in {".", "!", "?"}
+                for token in tokenizador.tokenizar(continuacao)
+            )
         ),
     }
 
@@ -1153,6 +1268,12 @@ def main() -> None:
         tokenizador.tamanho,
         dispositivo,
     )
+    desempenho_autorregressivo = benchmark_autorregressivo(
+        modelo,
+        tokenizador,
+        str(teste[0]["pedido"]),
+        dispositivo,
+    )
     relatorio = {
         "experimento": "gerador_esparso_base_50k",
         "versao": "1.0.0",
@@ -1191,7 +1312,8 @@ def main() -> None:
                 "recuperacao_campos_pedido"
             ],
         },
-        "desempenho": desempenho,
+        "desempenho_forward": desempenho,
+        "desempenho_autorregressivo": desempenho_autorregressivo,
         "tempo_total_segundos": time.perf_counter() - inicio_total,
         "checkpoint_final": str(
             (args.resultados / "epoca_05.pt").resolve()
@@ -1215,7 +1337,10 @@ def main() -> None:
                     for chave, valor in geracao_livre.items()
                     if chave != "exemplos"
                 },
-                "desempenho": desempenho,
+                "desempenho_forward": desempenho,
+                "desempenho_autorregressivo": (
+                    desempenho_autorregressivo
+                ),
                 "exemplos": geracao_livre["exemplos"][:3],
                 "relatorio": str(
                     (args.resultados / "relatorio.json").resolve()

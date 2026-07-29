@@ -19,7 +19,7 @@ O modelo possui dimensão 128, três blocos causais, contexto máximo de 640
 tokens e 163.667 parâmetros. Cada bloco contém:
 
 1. projeções Q/K treináveis em COO;
-2. seleção causal Top-32;
+2. seleção causal Top-32 processada em blocos de 32 consultas;
 3. residual e LayerNorm;
 4. FFN COO 128-384-128 com GELU e Top-64;
 5. residual com gate treinável e LayerNorm.
@@ -29,6 +29,19 @@ densa no núcleo. O embedding/classificador compartilhado é uma matriz
 treinável densa; normalização, residuais, softmax e escores temporários também
 operam sobre tensores densos. Por isso, o modelo é descrito como tendo núcleo
 estruturalmente esparso, não como 100% esparso.
+
+Cada bloco de consultas é comparado com todo o prefixo causal e conserva os
+mesmos 32 maiores escores da referência que materializava
+`[lote, tempo, tempo]`. Testes numéricos confirmam equivalência dentro de
+tolerância de `1e-6`. A memória de escores passa a ser
+`O(lote × bloco × tempo)`, mas a quantidade total de produtos Q/K continua
+aproximadamente quadrática no tempo.
+
+As matrizes COO mantêm os valores treináveis na ordem original do checkpoint,
+ordenam os índices uma única vez e informam ao PyTorch que o tensor já está
+coalescido. Em inferência, a representação esparsa é reutilizada enquanto a
+versão do parâmetro não muda; treino, troca de dispositivo ou alteração dos
+pesos invalidam esse cache.
 
 ## Causalidade
 
@@ -50,6 +63,18 @@ O corpus procedural é gerado deterministicamente e dividido sem sobreposição:
 O tokenizador separa palavras e pontuação e é reconstruído pelo vocabulário
 persistido no checkpoint.
 
+## Contrato de entrada
+
+O executor aceita o formato:
+
+```text
+Pedido: escreva um relato sobre <pessoa>, com ajuda de <ajudante>, para <tarefa>. Inclua <objeto> no <local> e o problema <problema>. Texto:
+```
+
+Todos os tokens precisam existir no vocabulário do checkpoint. Formato
+incompleto, campos invertidos e palavras desconhecidas são rejeitados antes da
+inferência, em vez de serem convertidos silenciosamente para `<unk>`.
+
 ## Treinamento oficial
 
 - semente: 20260728;
@@ -68,23 +93,51 @@ Cada época possui um checkpoint separado. Todos são carregáveis com
 - PPL final: 1,0505;
 - acurácia de token: 97,53%;
 - 24/24 gerações aprovadas;
-- mínimo de 2.802 caracteres;
-- média de 2.829,9 caracteres;
+- 24/24 gerações armazenadas no relatório;
+- mínimo de 2.806 caracteres;
+- média de 2.830,3 caracteres;
 - recuperação dos campos: 100%;
 - consistência objeto/local e ações: 100%;
 - vazamento Q&A: 0%;
-- repetição média de trigramas: 1,13%;
-- frequência máxima de um trigrama: duas ocorrências.
+- repetição média de trigramas: 1,17%;
+- frequência máxima de um trigrama: duas ocorrências;
+- retentativa controlada: 3/24 gerações;
+- cinco contratos adversariais aprovados.
+
+O validador 2.0 verifica relações de objeto e local por cláusula completa. A
+contradição reproduzível `o livro foi levado para o deposito, mas o livro
+continuava na sala` é rejeitada; menções a um objeto diferente funcionam como
+distratores e não reprovam um texto válido.
+
+## Desempenho e ambiente
+
+A revalidação separa métricas com significados diferentes:
+
+- forward paralelo, lote 16 e contexto 640: 117.980,83 tokens/s,
+  86,79 ms e pico de 88,46 MiB;
+- geração autorregressiva de um relato: 97,37 tokens/s;
+- latência até o primeiro token: 5,57 ms;
+- tempo total para 489 tokens e 2.840 caracteres: 5,02 s.
+
+O teste oficial foi executado em Windows 11, Python 3.14.0,
+PyTorch 2.11.0+cu128, CUDA 12.8 e NVIDIA GeForce RTX 3050. `pyproject.toml` e
+`requirements.txt` fixam a dependência principal. O GitHub Actions executa a
+suíte de CPU; `testes/test_gpu_gerador.py` valida localmente a carga e o
+forward do checkpoint em CUDA, ou é ignorado quando não existe GPU.
 
 ## Segurança de checkpoint
 
 O executor e o validador usam `weights_only=True` e recarga estrita. O script
 de promoção recusa sobrescrever um checkpoint oficial existente e exige cinco
 épocas, 50.000 amostras, 500 passos por época e todos os critérios de
-revalidação aprovados.
+revalidação aprovados. Também exige 24 saídas auditáveis, validador 2.0 e
+medição autorregressiva válida.
 
 ## Limite de validade
 
 As métricas comprovam desempenho no domínio procedural treinado. Elas não
-demonstram linguagem aberta geral. O cálculo dos escores de atenção também
-continua denso antes da seleção Top-K.
+demonstram linguagem aberta geral. A avaliação usa combinações disjuntas, mas
+segue o mesmo gerador procedural do treino. A seleção é esparsa e não mantém a
+matriz completa de atenção, embora a computação Q/K ainda seja quadrática.
+Uma baseline neural densa permanece fora do repositório para respeitar o
+escopo de arquitetura única.

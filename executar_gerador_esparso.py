@@ -22,8 +22,8 @@ from src.modelo_gerador_esparso import (
 )
 from src.tokenizador_palavras import TokenizadorPalavras
 from treinar_gerador_esparso import (
-    extrair_campos_pedido,
     gerar_relato_validado,
+    validar_prompt_publico,
 )
 
 
@@ -109,8 +109,8 @@ def main() -> None:
         args.checkpoint,
         dispositivo,
     )
-    campos = extrair_campos_pedido(args.prompt)
-    if campos is not None and not args.amostrar:
+    campos = validar_prompt_publico(args.prompt, tokenizador)
+    if not args.amostrar:
         texto, _ = gerar_relato_validado(
             modelo,
             tokenizador,

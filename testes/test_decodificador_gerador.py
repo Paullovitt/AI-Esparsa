@@ -63,15 +63,23 @@ class TesteDecodificadorGerador(unittest.TestCase):
         self.assertTrue(torch.isfinite(logits).all())
 
     def test_para_na_primeira_frase_completa(self) -> None:
+        metricas: dict[str, float] = {}
         texto = gerar_controlado(
             ModeloFalso(),
             TokenizadorFalso(),
             "Resposta:",
             torch.device("cpu"),
             configuracao=ConfiguracaoDecodificacao(maximo_tokens=8),
+            metricas_desempenho=metricas,
         )
         self.assertEqual(texto, "resposta: na cozinha.")
         self.assertNotIn("cozinha. na", texto)
+        self.assertEqual(metricas["tokens_gerados"], 3.0)
+        self.assertGreater(metricas["tokens_por_segundo"], 0.0)
+        self.assertGreaterEqual(
+            metricas["latencia_primeiro_token_ms"],
+            0.0,
+        )
 
 
 if __name__ == "__main__":
