@@ -5,9 +5,10 @@ Ano: 2026
 
 ## Escopo
 
-O Gerador Esparso Coerente é a única arquitetura mantida neste repositório. Seu
-objetivo é produzir relatos procedurais longos condicionados por campos
-explícitos de um pedido.
+O Gerador Esparso Coerente é a única arquitetura oficial deste repositório.
+Seu objetivo é produzir relatos procedurais longos condicionados por campos
+explícitos de um pedido. Uma baseline densa existe exclusivamente como
+controle experimental autorizado e não altera o checkpoint oficial.
 
 Checkpoint oficial:
 
@@ -42,6 +43,17 @@ ordenam os índices uma única vez e informam ao PyTorch que o tensor já está
 coalescido. Em inferência, a representação esparsa é reutilizada enquanto a
 versão do parâmetro não muda; treino, troca de dispositivo ou alteração dos
 pesos invalidam esse cache.
+
+## Controle denso equivalente
+
+A baseline usa dimensão 88, três blocos, FFN 88-160-88, Q/K densos e atenção
+causal densa por `scaled_dot_product_attention`. Residual, LayerNorm, posição
+senoidal, classificador amarrado e contexto 640 são preservados. Ela possui
+163.003 parâmetros contra 163.667 do esparso, diferença de 0,41%.
+
+Essa escolha controla o orçamento de parâmetros, mas não a largura: o modelo
+esparso opera em dimensão 128. O kernel denso oficial do PyTorch foi usado para
+evitar uma baseline artificialmente lenta.
 
 ## Causalidade
 
@@ -135,11 +147,40 @@ de promoção recusa sobrescrever um checkpoint oficial existente e exige cinco
 revalidação aprovados. Também exige 24 saídas auditáveis, validador 2.0 e
 medição autorregressiva válida.
 
+## Comparação experimental
+
+O protocolo fixou os mesmos dados, tokenizador, ordem dos lotes, semente, cinco
+épocas, lote 100, 500 passos por época, AdamW, agenda, pesos da perda e
+decodificador. O treino esparso oficial já correspondia a esse protocolo; a
+baseline densa foi treinada do zero, com cinco checkpoints separados.
+
+| Métrica | Esparso | Denso |
+|---|---:|---:|
+| Parâmetros | 163.667 | 163.003 |
+| PPL de teste | 1,050526 | 1,049220 |
+| Acurácia | 97,53% | 97,59% |
+| Aprovação/recuperação | 100% / 100% | 100% / 100% |
+| Tempo de treino | 1.663,30 s | 281,09 s |
+| Pico de VRAM no treino | 1.898,33 MiB | 950,36 MiB |
+| Forward | 121.398,23 tokens/s | 1.537.708,78 tokens/s |
+| Pico de VRAM no forward | 90,09 MiB | 122,21 MiB |
+| Geração autorregressiva | 92,22 tokens/s | 506,44 tokens/s |
+| Primeiro token | 11,95 ms | 2,07 ms |
+
+A baseline densa empatou em aprovação e recuperação, obteve PPL ligeiramente
+menor e venceu tempo de treino, VRAM de treino, forward e geração. O modelo
+esparso venceu somente a memória de forward entre as métricas principais.
+Logo, os dados não sustentam superioridade prática do esparso nesta
+implementação. A revalidação independente reproduziu a PPL densa com erro
+absoluto de `8,96e-8` e aprovou novamente as 24 gerações.
+
 ## Limite de validade
 
 As métricas comprovam desempenho no domínio procedural treinado. Elas não
 demonstram linguagem aberta geral. A avaliação usa combinações disjuntas, mas
 segue o mesmo gerador procedural do treino. A seleção é esparsa e não mantém a
 matriz completa de atenção, embora a computação Q/K ainda seja quadrática.
-Uma baseline neural densa permanece fora do repositório para respeitar o
-escopo de arquitetura única.
+Os tempos dos dois treinos foram registrados em execuções distintas na mesma
+GPU. A equivalência é por parâmetros, não por largura. O resultado é específico
+do corpus procedural, da RTX 3050 e dos kernels PyTorch avaliados; não autoriza
+promover automaticamente a baseline nem generalizar a conclusão.

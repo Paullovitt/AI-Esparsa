@@ -18,6 +18,7 @@ from executar_gerador_esparso import (
 )
 from src.documentacao_metricas import sincronizar_metricas_documentacao
 from src.tokenizador_palavras import TokenizadorPalavras
+from src.versao import VERSAO_PROJETO
 from treinar_gerador_esparso import (
     RESULTADOS_PADRAO,
     avaliar_geracao_livre,
@@ -131,7 +132,7 @@ def main() -> None:
     )
     adversarial = avaliar_contratos_adversariais(tokenizador)
     relatorio = json.loads(RELATORIO.read_text(encoding="utf-8"))
-    relatorio["versao"] = "1.1.0"
+    relatorio["versao"] = VERSAO_PROJETO
     relatorio["configuracao"] = asdict(modelo.configuracao)
     if "arquitetura" in relatorio:
         relatorio["arquitetura_treino"] = relatorio.pop("arquitetura")

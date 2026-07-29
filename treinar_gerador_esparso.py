@@ -34,6 +34,7 @@ from src.modelo_gerador_esparso import (
     ModeloGeradorEsparso,
 )
 from src.tokenizador_palavras import TokenizadorPalavras
+from src.versao import VERSAO_PROJETO
 from src.corpus_gerador_esparso import (
     ACOES,
     LOCAIS as LOCAIS_LONGOS,
@@ -998,7 +999,7 @@ def salvar_checkpoint(
     torch.save(
         {
             "modelo": "gerador-esparso-coerente-base",
-            "versao": "1.0.0",
+            "versao": VERSAO_PROJETO,
             "epoca": epoca,
             "epocas_planejadas": 5,
             "semente": SEMENTE,
@@ -1276,7 +1277,7 @@ def main() -> None:
     )
     relatorio = {
         "experimento": "gerador_esparso_base_50k",
-        "versao": "1.0.0",
+        "versao": VERSAO_PROJETO,
         "autor": "Paulo Augusto",
         "ano": 2026,
         "objetivo": (

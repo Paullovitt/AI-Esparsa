@@ -5,9 +5,11 @@ Ano: 2026
 
 ## Objetivo
 
-Este projeto mantém uma única arquitetura: o Gerador Esparso Coerente. O
-modelo produz relatos procedurais longos condicionados por um pedido e preserva
-agentes, tarefa, objeto, local, problema e ações ao longo do texto.
+Este projeto mantém o Gerador Esparso Coerente como único modelo oficial. Ele
+produz relatos procedurais longos condicionados por um pedido e preserva
+agentes, tarefa, objeto, local, problema e ações ao longo do texto. Uma
+baseline densa de parâmetros equivalentes é mantida somente como controle
+experimental e nunca substitui automaticamente o checkpoint oficial.
 
 O checkpoint oficial é:
 
@@ -48,6 +50,21 @@ O Top-K em blocos preserva exatamente o resultado da implementação de
 referência e limita a memória temporária dos escores a
 `O(lote × bloco × tempo)`. A quantidade de produtos Q/K ainda é quadrática no
 comprimento da sequência.
+
+### Baseline densa experimental
+
+A comparação autorizada usa uma baseline convencional com:
+
+- 163.003 parâmetros, contra 163.667 do esparso (diferença de 0,41%);
+- dimensão 88, três blocos e FFN 88-160-88;
+- Q/K e FFN totalmente conectados;
+- atenção causal densa pelo kernel otimizado do PyTorch;
+- os mesmos residuais, normalizações, posição senoidal e pesos de
+  embedding/saída amarrados.
+
+A largura menor compensa a conectividade completa e mantém o orçamento de
+parâmetros equivalente. A baseline é um controle científico, não um segundo
+checkpoint oficial.
 
 ## Dependências
 
@@ -128,6 +145,7 @@ Cada época é salva separadamente em
 
 ```powershell
 python validar_gerador_esparso.py
+python validar_comparacao_esparso_denso.py
 python -m unittest discover -s testes -v
 ```
 
@@ -188,9 +206,57 @@ medições separadas. As linhas de desempenho acima são atualizadas
 automaticamente por `validar_gerador_esparso.py`; o `relatorio.json` é a fonte
 única dos valores.
 
+## Comparação esparso × denso
+
+O experimento utilizou os mesmos 50.000/1.000/1.000 registros, tokenizador,
+ordem de lotes, semente, cinco épocas, 500 passos por época, lote 100, AdamW,
+agenda de aprendizado e decodificador. O treino oficial esparso já satisfazia
+exatamente esse protocolo e foi reutilizado; a baseline densa foi treinada do
+zero. Portanto, os tempos foram medidos na mesma GPU, mas em execuções
+distintas.
+
+Para criar uma nova rodada em outro diretório:
+
+```powershell
+python comparar_esparso_denso.py --resultados resultados/minha_comparacao
+python validar_comparacao_esparso_denso.py --resultados resultados/minha_comparacao
+```
+
+| Métrica | Esparso | Denso | Melhor |
+|---|---:|---:|---|
+| Parâmetros | 163.667 | 163.003 | equivalente |
+| PPL de teste | 1,050526 | 1,049220 | denso |
+| Acurácia de token | 97,53% | 97,59% | denso |
+| Gerações aprovadas | 24/24 | 24/24 | empate |
+| Recuperação dos campos | 100% | 100% | empate |
+| Repetição média de trigramas | 1,17% | 1,03% | denso |
+| Uso de retentativa | 12,50% | 8,33% | denso |
+| Tempo das cinco épocas | 1.663,30 s | 281,09 s | denso |
+| Pico de VRAM no treino | 1.898,33 MiB | 950,36 MiB | denso |
+| Forward paralelo | 121.398,23 tokens/s | 1.537.708,78 tokens/s | denso |
+| Pico de VRAM no forward | 90,09 MiB | 122,21 MiB | esparso |
+| Geração autorregressiva | 92,22 tokens/s | 506,44 tokens/s | denso |
+| Primeiro token | 11,95 ms | 2,07 ms | denso |
+| Checkpoint | 662,32 KiB | 658,82 KiB | equivalente |
+
+Conclusão: a vantagem prática esparsa não foi sustentada neste protocolo. A
+baseline densa preservou a qualidade, treinou 5,92× mais rápido, reduziu a VRAM
+de treino em 49,94%, fez forward 12,67× mais rápido e gerou 5,49× mais rápido.
+O esparso venceu no pico de VRAM do forward, usando 26,29% menos memória.
+
+Essa conclusão é específica deste domínio, hardware e implementação PyTorch;
+não demonstra superioridade universal de arquiteturas densas.
+
+Artefatos completos:
+
+- `resultados/comparacao_esparso_denso_50k/comparacao.json`;
+- `resultados/comparacao_esparso_denso_50k/COMPARACAO.md`;
+- relatórios individuais, 24 textos por modelo e cinco checkpoints densos.
+
 ## Principais módulos
 
 - `src/modelo_gerador_esparso.py`: arquitetura causal esparsa;
+- `src/modelo_gerador_denso.py`: baseline densa experimental equivalente;
 - `src/camada_linear_esparsa.py`: projeção treinável COO, com índices
   coalescidos e cache seguro de inferência;
 - `src/corpus_gerador_esparso.py`: geração determinística dos registros;
@@ -200,6 +266,8 @@ automaticamente por `validar_gerador_esparso.py`; o `relatorio.json` é a fonte
 - `treinar_gerador_esparso.py`: treino, avaliação e checkpoints;
 - `executar_gerador_esparso.py`: inferência pelo checkpoint oficial;
 - `validar_gerador_esparso.py`: revalidação independente e adversarial;
+- `comparar_esparso_denso.py`: protocolo de treino e comparação justa;
+- `validar_comparacao_esparso_denso.py`: recarga e revalidação independente;
 - `promover_gerador_esparso.py`: promoção segura de um candidato aprovado.
 
 ## Estrutura
@@ -212,6 +280,15 @@ AI-Esparsa/
   modelos/
     gerador_esparso_base.pt
   resultados/
+    comparacao_esparso_denso_50k/
+      esparso/
+        relatorio.json
+      denso/
+        epoca_01.pt ... epoca_05.pt
+        relatorio.json
+      comparacao.json
+      COMPARACAO.md
+      protocolo.json
     gerador_esparso_base_50k/
       epoca_01.pt
       epoca_02.pt
@@ -225,20 +302,26 @@ AI-Esparsa/
     corpus_gerador_esparso.py
     decodificador_gerador.py
     documentacao_metricas.py
+    modelo_gerador_denso.py
     modelo_gerador_esparso.py
     tokenizador_palavras.py
+    versao.py
   testes/
+    test_comparacao_esparso_denso.py
     test_decodificador_gerador.py
     test_documentacao_metricas.py
     test_gpu_gerador.py
+    test_modelo_gerador_denso.py
     test_modelo_gerador_esparso.py
     test_pipeline_gerador_esparso.py
   pyproject.toml
   requirements.txt
+  comparar_esparso_denso.py
   executar_gerador_esparso.py
   promover_gerador_esparso.py
   treinar_gerador_esparso.py
   validar_gerador_esparso.py
+  validar_comparacao_esparso_denso.py
 ```
 
 ## Limitações
@@ -251,8 +334,10 @@ AI-Esparsa/
 - prompts fora do formato ou do vocabulário são rejeitados;
 - a atenção não guarda a matriz completa de escores, mas ainda executa
   aproximadamente `O(tempo²)` produtos Q/K;
-- uma baseline neural densa não faz parte do repositório porque o escopo
-  autorizado mantém apenas o Gerador Esparso Coerente.
+- a baseline compara orçamento de parâmetros, mas precisa reduzir a dimensão
+  interna de 128 para 88;
+- os tempos de treino esparso e denso vêm de execuções distintas na mesma GPU;
+- uma única baseline e um domínio procedural não provam uma regra universal.
 
 ## Licença
 

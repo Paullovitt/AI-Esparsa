@@ -354,8 +354,10 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
             relatorio,
         )
 
-    def test_repositorio_mantem_um_unico_modelo(self) -> None:
-        """Impede a reintrodução acidental das arquiteturas removidas."""
+    def test_repositorio_mantem_um_modelo_oficial_e_uma_baseline(
+        self,
+    ) -> None:
+        """Limita a exceção autorizada à baseline densa experimental."""
 
         implementacoes = sorted(
             caminho.name
@@ -372,15 +374,23 @@ class TestePipelineGeradorEsparso(unittest.TestCase):
         )
         self.assertEqual(
             implementacoes,
-            ["modelo_gerador_esparso.py"],
+            [
+                "modelo_gerador_denso.py",
+                "modelo_gerador_esparso.py",
+            ],
         )
         self.assertEqual(
             checkpoints,
             ["gerador_esparso_base.pt"],
         )
-        self.assertEqual(
-            resultados,
-            ["gerador_esparso_base_50k"],
+        self.assertIn("gerador_esparso_base_50k", resultados)
+        self.assertTrue(
+            set(resultados).issubset(
+                {
+                    "gerador_esparso_base_50k",
+                    "comparacao_esparso_denso_50k",
+                }
+            )
         )
 
 

@@ -1,0 +1,185 @@
+{
+  "experimento": "comparacao_esparso_denso_parametros_equivalentes",
+  "versao": "1.1.0",
+  "autor": "Paulo Augusto",
+  "ano": 2026,
+  "protocolo": {
+    "semente": 20260728,
+    "dados": {
+      "treino": 50000,
+      "validacao": 1000,
+      "teste": 1000
+    },
+    "epocas": 5,
+    "lote": 100,
+    "passos_por_epoca": 500,
+    "passos_totais": 2500,
+    "otimizador": "AdamW",
+    "taxa_aprendizado": 0.0018,
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "weight_decay": 0.0001,
+    "clip_grad_norm": 1.0,
+    "agenda": "aquecimento_mais_cosseno",
+    "frases_geracao": 24,
+    "minimo_caracteres": 2000
+  },
+  "ambiente": {
+    "python": "3.14.0",
+    "sistema": "Windows-11-10.0.26200-SP0",
+    "pytorch": "2.11.0+cu128",
+    "cuda_runtime": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3050"
+  },
+  "justica": {
+    "mesmos_dados": true,
+    "mesma_ordem_de_lotes": true,
+    "mesmos_passos": true,
+    "mesmo_otimizador_e_agenda": true,
+    "mesmo_decodificador": true,
+    "treinos_na_mesma_execucao": false,
+    "diferenca_parametros_percentual": 0.4073544658687256,
+    "observacao": "A baseline troca largura por conectividade densa. Isso iguala o orçamento de parâmetros, não a dimensão interna. O esparso usa o treino oficial já concluído sob o mesmo protocolo; os tempos de treino não são simultâneos."
+  },
+  "metricas": {
+    "parametros": {
+      "esparso": 163667.0,
+      "denso": 163003.0,
+      "vencedor": "denso",
+      "vantagem_percentual_esparso": -0.4073544658687256
+    },
+    "ppl": {
+      "esparso": 1.050526326960745,
+      "denso": 1.049220038945348,
+      "vencedor": "denso",
+      "vantagem_percentual_esparso": -0.1245008641571399
+    },
+    "acuracia_token": {
+      "esparso": 0.9753365799955658,
+      "denso": 0.9758736554001881,
+      "vencedor": "denso",
+      "vantagem_percentual_esparso": -0.05503534209068128
+    },
+    "aprovacao_geracao": {
+      "esparso": 1.0,
+      "denso": 1.0,
+      "vencedor": "empate",
+      "vantagem_percentual_esparso": 0.0
+    },
+    "recuperacao_campos": {
+      "esparso": 1.0,
+      "denso": 1.0,
+      "vencedor": "empate",
+      "vantagem_percentual_esparso": 0.0
+    },
+    "repeticao_trigramas": {
+      "esparso": 0.011736107825358352,
+      "denso": 0.01031112275828236,
+      "vencedor": "denso",
+      "vantagem_percentual_esparso": -13.819882669240657
+    },
+    "taxa_retentativa": {
+      "esparso": 0.125,
+      "denso": 0.08333333333333333,
+      "vencedor": "denso",
+      "vantagem_percentual_esparso": -50.0
+    },
+    "tempo_treino_segundos": {
+      "esparso": 1663.3037732000012,
+      "denso": 281.0865106999918,
+      "vencedor": "denso",
+      "vantagem_percentual_esparso": -491.7408733196992
+    },
+    "vram_treino_mib": {
+      "esparso": 1898.33203125,
+      "denso": 950.3564453125,
+      "vencedor": "denso",
+      "vantagem_percentual_esparso": -99.74947722123176
+    },
+    "forward_tokens_s": {
+      "esparso": 121398.22539987085,
+      "denso": 1537708.7789920259,
+      "vencedor": "denso",
+      "vantagem_percentual_esparso": -92.10525249914696
+    },
+    "vram_forward_mib": {
+      "esparso": 90.08544921875,
+      "denso": 122.2109375,
+      "vencedor": "esparso",
+      "vantagem_percentual_esparso": 26.286917471073323
+    },
+    "geracao_tokens_s": {
+      "esparso": 92.22245769228925,
+      "denso": 506.43884475104846,
+      "vencedor": "denso",
+      "vantagem_percentual_esparso": -81.79001104513945
+    },
+    "primeiro_token_ms": {
+      "esparso": 11.950200001592748,
+      "denso": 2.0703999980469234,
+      "vencedor": "denso",
+      "vantagem_percentual_esparso": -477.19281360441295
+    },
+    "checkpoint_bytes": {
+      "esparso": 678219.0,
+      "denso": 674635.0,
+      "vencedor": "denso",
+      "vantagem_percentual_esparso": -0.5312502316067169
+    }
+  },
+  "resumo_numerico": {
+    "aceleracao_treino_denso": 5.917408733196992,
+    "reducao_vram_treino_denso_percentual": 49.93729075483617,
+    "aceleracao_forward_denso": 12.66664956532109,
+    "aceleracao_geracao_densa": 5.491491524123543,
+    "reducao_vram_forward_esparso_percentual": 26.286917471073323,
+    "diferenca_ppl_denso_menos_esparso": -0.0013062880153968948
+  },
+  "qualidade_esparsa_preservada": true,
+  "vantagens_esparsas_de_eficiencia": 1,
+  "vantagens_de_eficiencia_avaliadas": 7,
+  "vantagem_pratica_esparsa_sustentada": false,
+  "modelo_superior_neste_protocolo": "denso",
+  "relatorios": {
+    "esparso": "esparso/relatorio.json",
+    "denso": "denso/relatorio.json"
+  },
+  "limite": "O resultado vale para este domínio, hardware e orçamento. Uma única configuração não prova superioridade universal.",
+  "revalidacao_independente": {
+    "weights_only": true,
+    "checkpoint_epoca": 5,
+    "ppl_recalculada": 1.049220128540948,
+    "ppl_registrada": 1.049220038945348,
+    "diferenca_absoluta_ppl": 8.959559982812948e-08,
+    "geracao_recalculada": {
+      "amostras_avaliadas": 24,
+      "taxa_completude": 1.0,
+      "taxa_aprovacao": 1.0,
+      "taxa_vazamento_pergunta": 0.0,
+      "taxa_uso_retentativa": 0.08333333333333333,
+      "consistencia_objeto_local": 1.0,
+      "consistencia_acoes": 1.0,
+      "tokens_medios": 486.9166666666667,
+      "caracteres_minimos": 2790,
+      "caracteres_medios": 2827.0833333333335,
+      "frases_medias": 24.0,
+      "recuperacao_campos_pedido": 1.0,
+      "repeticao_trigramas_media": 0.01031112275828236,
+      "frequencia_maxima_trigrama": 2
+    },
+    "criterios": {
+      "cinco_checkpoints_weights_only": true,
+      "carga_estrita": true,
+      "ppl_reproduzida": true,
+      "vinte_quatro_geracoes": true,
+      "aprovacao_100": true,
+      "recuperacao_100": true,
+      "consistencia_objeto_local_100": true,
+      "consistencia_acoes_100": true,
+      "todas_as_saidas_salvas": true
+    },
+    "aprovado": true
+  }
+}

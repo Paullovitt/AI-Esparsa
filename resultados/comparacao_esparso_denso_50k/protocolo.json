@@ -1,0 +1,35 @@
+{
+  "semente": 20260728,
+  "dados": {
+    "treino": 50000,
+    "validacao": 1000,
+    "teste": 1000
+  },
+  "epocas": 5,
+  "lote": 100,
+  "passos_por_epoca": 500,
+  "passos_totais": 2500,
+  "otimizador": "AdamW",
+  "taxa_aprendizado": 0.0018,
+  "betas": [
+    0.9,
+    0.95
+  ],
+  "weight_decay": 0.0001,
+  "clip_grad_norm": 1.0,
+  "agenda": "aquecimento_mais_cosseno",
+  "frases_geracao": 24,
+  "minimo_caracteres": 2000,
+  "ambiente": {
+    "python": "3.14.0",
+    "sistema": "Windows-11-10.0.26200-SP0",
+    "pytorch": "2.11.0+cu128",
+    "cuda_runtime": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3050"
+  },
+  "parametros_planejados": {
+    "esparso": 163667,
+    "denso": 163003,
+    "diferenca_percentual": 0.4073544658687256
+  }
+}

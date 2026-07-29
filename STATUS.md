@@ -3,8 +3,9 @@
 Autor: Paulo Augusto  
 Ano: 2026
 
-- Arquiteturas mantidas: 1.
-- Modelo: Gerador Esparso Coerente.
+- Modelos oficiais: 1.
+- Modelo oficial: Gerador Esparso Coerente.
+- Controle experimental autorizado: baseline densa de 163.003 parâmetros.
 - Checkpoint oficial: `modelos/gerador_esparso_base.pt`.
 - SHA-256: `daba162081b351fe44bd9179c7a4f5ec374e691841d12774789916f846ac215f`.
 - Parâmetros: 163.667.
@@ -39,4 +40,16 @@ Ano: 2026
 - Ambiente revalidado: Windows 11, Python 3.14.0, PyTorch 2.11.0+cu128,
   CUDA 12.8 e NVIDIA GeForce RTX 3050.
 - Relatório: `resultados/gerador_esparso_base_50k/relatorio.json`.
-- Situação: aprovado e único modelo do projeto.
+- Comparação equivalente:
+  - esparso: 163.667 parâmetros, PPL 1,050526 e 24/24 gerações;
+  - denso: 163.003 parâmetros, PPL 1,049220 e 24/24 gerações;
+  - denso: treino 5,92×, forward 12,67× e geração 5,49× mais rápidos;
+  - denso: 49,94% menos VRAM no treino;
+  - esparso: 26,29% menos VRAM no forward;
+  - conclusão: vantagem prática esparsa não sustentada neste protocolo.
+- Revalidação densa: aprovada, cinco checkpoints `weights_only=True`, PPL
+  reproduzida e 24/24 gerações novamente aprovadas.
+- Relatório comparativo:
+  `resultados/comparacao_esparso_denso_50k/comparacao.json`.
+- Situação: esparso aprovado como modelo oficial; baseline densa mantida
+  apenas para controle e investigação.

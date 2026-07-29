@@ -20,5 +20,6 @@ jobs:
           python -m compileall -q src testes
           treinar_gerador_esparso.py executar_gerador_esparso.py
           validar_gerador_esparso.py promover_gerador_esparso.py
+          comparar_esparso_denso.py validar_comparacao_esparso_denso.py
       - name: Testar
         run: python -m unittest discover -s testes -v
