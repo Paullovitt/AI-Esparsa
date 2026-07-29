@@ -18,8 +18,9 @@ jobs:
       - name: Compilar
         run: >-
           python -m compileall -q src testes
-          treinar_gerador_esparso.py executar_gerador_esparso.py
-          validar_gerador_esparso.py promover_gerador_esparso.py
-          comparar_esparso_denso.py validar_comparacao_esparso_denso.py
+          executar_gerador_esparso_v73.py executar_multimodal_v8.py
+          treinar_multimodal_v8.py
       - name: Testar
+        env:
+          CUDA_VISIBLE_DEVICES: "-1"
         run: python -m unittest discover -s testes -v

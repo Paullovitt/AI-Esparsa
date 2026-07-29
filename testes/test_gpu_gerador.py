@@ -1,4 +1,8 @@
-"""Contrato CUDA do único checkpoint oficial."""
+"""Contrato CUDA do checkpoint V7.3 preservado.
+
+Autor: Paulo Augusto
+Ano: 2026
+"""
 
 from __future__ import annotations
 
@@ -7,31 +11,30 @@ from pathlib import Path
 
 import torch
 
-from executar_gerador_esparso import carregar_gerador
-from src.modelo_gerador_esparso_v62 import ModeloGeradorEsparsoV62
+from executar_gerador_esparso_v73 import carregar_v73
 
 
 RAIZ = Path(__file__).resolve().parents[1]
 
 
-@unittest.skipUnless(torch.cuda.is_available(), "CUDA indisponível")
+@unittest.skipUnless(torch.cuda.is_available(), "CUDA indisponivel")
 class TesteGPUGerador(unittest.TestCase):
-    def test_checkpoint_executa_na_gpu(self) -> None:
+    def test_checkpoint_v73_executa_na_gpu_sem_compilar_kernel(self) -> None:
         dispositivo = torch.device("cuda")
-        modelo, tokenizador, _ = carregar_gerador(
-            RAIZ / "modelos" / "gerador_esparso_base.pt",
+        modelo, tokenizador, _ = carregar_v73(
+            RAIZ / "modelos" / "gerador_esparso_v73_base.pt",
             dispositivo,
-            classe_modelo=ModeloGeradorEsparsoV62,
+            exigir_kernel_cuda=False,
         )
         entrada = torch.tensor(
-            [tokenizador.codificar("pedido: texto:", eos=False)],
+            [[tokenizador.bos_id, tokenizador.eos_id]],
             device=dispositivo,
         )
-        with torch.inference_mode():
-            logits, _ = modelo(entrada)
+        # Gradiente habilitado força o caminho PyTorch e mantém este teste
+        # independente do cache compilado opcional.
+        logits, _ = modelo(entrada)
         self.assertEqual(logits.device.type, "cuda")
         self.assertTrue(torch.isfinite(logits).all())
-        self.assertTrue(modelo.auditoria()["cache_linear_csr"])
 
 
 if __name__ == "__main__":

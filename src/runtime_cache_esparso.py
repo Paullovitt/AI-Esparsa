@@ -1,4 +1,4 @@
-"""Runtime-base V6.2 com cache causal exato para inferencia.
+"""Runtime reutilizavel com cache causal exato para inferencia esparsa.
 
 Os pesos, a topologia COO, a atencao Top-K, a FFN, os residuais e as
 normalizações continuam sendo os da referência. A diferença desta versão é somente
@@ -26,7 +26,7 @@ from .modelo_gerador_esparso import (
 )
 
 
-def _gate_inferencia(modulo: object, nome: str) -> Tensor:
+def gate_inferencia_cacheado(modulo: object, nome: str) -> Tensor:
     """Reutiliza o gate imutavel enquanto a versao do parametro nao mudar."""
 
     parametro = getattr(modulo, nome)
@@ -47,7 +47,7 @@ def _gate_inferencia(modulo: object, nome: str) -> Tensor:
 
 
 @dataclass
-class CacheCamadaV62:
+class CacheCamadaGeracao:
     """Buffers prealocados de uma camada para evitar concatenacoes por token."""
 
     valores: Tensor
@@ -55,17 +55,17 @@ class CacheCamadaV62:
 
 
 @dataclass
-class CacheGeracaoV62:
+class CacheGeracao:
     """Estado causal completo de uma geracao incremental."""
 
     tokens: Tensor
-    camadas: tuple[CacheCamadaV62, ...]
+    camadas: tuple[CacheCamadaGeracao, ...]
     comprimento: int
     capacidade: int
 
 
-class ModeloGeradorEsparsoV62(ModeloGeradorEsparso):
-    """Runtime-base com cache incremental, sem parametros adicionais."""
+class ModeloGeradorEsparsoComCache(ModeloGeradorEsparso):
+    """Runtime com cache incremental, sem parametros adicionais."""
 
     def __init__(
         self,
@@ -96,12 +96,12 @@ class ModeloGeradorEsparsoV62(ModeloGeradorEsparso):
 
         estados = (
             estados
-            + _gate_inferencia(bloco, "gate_atencao") * contexto
+            + gate_inferencia_cacheado(bloco, "gate_atencao") * contexto
         )
         transformados = bloco.ffn(
             bloco.normalizacao_ffn(estados)
         )
-        return estados + _gate_inferencia(
+        return estados + gate_inferencia_cacheado(
             bloco,
             "gate_ffn",
         ) * transformados
@@ -184,7 +184,7 @@ class ModeloGeradorEsparsoV62(ModeloGeradorEsparso):
     def _contexto_incremental(
         bloco: BlocoGeradorEsparso,
         consulta: Tensor,
-        cache: CacheCamadaV62,
+        cache: CacheCamadaGeracao,
         comprimento: int,
     ) -> Tensor:
         """Calcula somente a consulta do token novo contra o prefixo cacheado."""
@@ -221,18 +221,18 @@ class ModeloGeradorEsparsoV62(ModeloGeradorEsparso):
     def _validar_modo_cache(self) -> None:
         if self.training:
             raise RuntimeError(
-                "o cache V6.2 e exclusivo de modelo em modo eval"
+                "o cache causal e exclusivo de modelo em modo eval"
             )
         if torch.is_grad_enabled():
             raise RuntimeError(
-                "o cache V6.2 exige inference_mode ou no_grad"
+                "o cache causal exige inference_mode ou no_grad"
             )
 
     @torch.inference_mode()
     def iniciar_cache_geracao(
         self,
         tokens: Tensor,
-    ) -> tuple[Tensor, CacheGeracaoV62]:
+    ) -> tuple[Tensor, CacheGeracao]:
         """Processa o prompt uma vez e prepara os buffers causais por camada."""
 
         self._validar_modo_cache()
@@ -257,10 +257,10 @@ class ModeloGeradorEsparsoV62(ModeloGeradorEsparso):
         )
         estados = (
             estados
-            + _gate_inferencia(self, "gate_posicao")
+            + gate_inferencia_cacheado(self, "gate_posicao")
             * self.posicoes[:comprimento].unsqueeze(0)
         )
-        caches: list[CacheCamadaV62] = []
+        caches: list[CacheCamadaGeracao] = []
 
         for bloco in self.blocos:
             normalizados = bloco.normalizacao_atencao(estados)
@@ -291,7 +291,7 @@ class ModeloGeradorEsparsoV62(ModeloGeradorEsparso):
             valores_cache[:, :comprimento].copy_(normalizados)
             chaves_cache[:, :comprimento].copy_(chaves)
             caches.append(
-                CacheCamadaV62(
+                CacheCamadaGeracao(
                     valores=valores_cache,
                     chaves=chaves_cache,
                 )
@@ -308,7 +308,7 @@ class ModeloGeradorEsparsoV62(ModeloGeradorEsparso):
             self.embedding.weight,
             self.saida_bias,
         )
-        return logits, CacheGeracaoV62(
+        return logits, CacheGeracao(
             tokens=tokens_cache,
             camadas=tuple(caches),
             comprimento=comprimento,
@@ -319,8 +319,8 @@ class ModeloGeradorEsparsoV62(ModeloGeradorEsparso):
     def avancar_cache_geracao(
         self,
         novo_token: Tensor,
-        cache: CacheGeracaoV62,
-    ) -> tuple[Tensor, CacheGeracaoV62]:
+        cache: CacheGeracao,
+    ) -> tuple[Tensor, CacheGeracao]:
         """Acrescenta um token e calcula somente seu caminho causal."""
 
         self._validar_modo_cache()
@@ -352,7 +352,7 @@ class ModeloGeradorEsparsoV62(ModeloGeradorEsparso):
         )
         estados = (
             estados
-            + _gate_inferencia(self, "gate_posicao")
+            + gate_inferencia_cacheado(self, "gate_posicao")
             * self.posicoes[posicao : posicao + 1].unsqueeze(0)
         )
         novo_comprimento = posicao + 1
@@ -399,19 +399,18 @@ class ModeloGeradorEsparsoV62(ModeloGeradorEsparso):
         return logits, cache
 
     def auditoria(self) -> dict[str, int | float | bool | str]:
-        """Explicita que a V6.2 muda o runtime, nao a rede treinada."""
+        """Explicita que o cache muda o runtime, nao a rede treinada."""
 
         auditoria = super().auditoria()
         auditoria.update(
             {
-                "modelo": "gerador-esparso-v62-base-runtime",
+                "modelo": "gerador-esparso-runtime-cache",
                 "cache_causal_incremental": True,
                 "cache_pre_alocado": True,
                 "cache_linear_csr": True,
                 "cache_gates_escalares": True,
                 "parametros_adicionais_cache": 0,
-                "arquitetura_pesos_identica_oficial": True,
-                "checkpoint_oficial": True,
+                "arquitetura_pesos_preservada": True,
             }
         )
         return auditoria

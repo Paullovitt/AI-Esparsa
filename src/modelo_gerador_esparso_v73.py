@@ -27,9 +27,9 @@ from .modelo_gerador_esparso import (
     BlocoGeradorEsparso,
     ConfiguracaoGeradorEsparso,
 )
-from .modelo_gerador_esparso_v62 import (
-    CacheGeracaoV62,
-    _gate_inferencia,
+from .runtime_cache_esparso import (
+    CacheGeracao,
+    gate_inferencia_cacheado,
 )
 from .roteamento_combinatorio_v73 import ConfiguracaoRoteamentoV73
 from .runtime_condicional_v73 import (
@@ -153,14 +153,14 @@ class BlocoInferenciaVetorizadoV73(BlocoGeradorEsparso):
             contexto = self._atencao_lote(estados)
             estados = (
                 estados
-                + _gate_inferencia(self, "gate_atencao") * contexto
+                + gate_inferencia_cacheado(self, "gate_atencao") * contexto
             )
             transformados = self.ffn(
                 self.normalizacao_ffn(estados)
             )
             return (
                 estados
-                + _gate_inferencia(self, "gate_ffn") * transformados
+                + gate_inferencia_cacheado(self, "gate_ffn") * transformados
             )
         return super().forward(estados)
 
@@ -305,8 +305,8 @@ class ModeloGeradorEsparsoV73(ModeloGeradorEsparsoCondicionalV73):
     def avancar_cache_geracao(
         self,
         novo_token: Tensor,
-        cache: CacheGeracaoV62,
-    ) -> tuple[Tensor, CacheGeracaoV62]:
+        cache: CacheGeracao,
+    ) -> tuple[Tensor, CacheGeracao]:
         """Funde o caminho crítico incremental em onze kernels por token."""
 
         if not self._pode_avancar_fundido(novo_token):

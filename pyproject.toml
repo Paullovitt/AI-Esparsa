@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gerador-esparso-coerente"
-version = "1.2.0"
-description = "Gerador esparso procedural com baseline densa comparativa"
+version = "2.0.0"
+description = "Gerador multimodal esparso com backbone combinatorio V7.3"
 readme = "README.md"
 requires-python = ">=3.11,<3.15"
 license = { file = "LICENSE" }
 authors = [{ name = "Paulo Augusto" }]
-dependencies = ["torch==2.11.0"]
+dependencies = ["torch==2.11.0", "Pillow==12.1.1"]
 
 [tool.setuptools]
 packages = ["src"]

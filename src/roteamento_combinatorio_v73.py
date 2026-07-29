@@ -23,7 +23,7 @@ from .modelo_gerador_esparso import (
     ConfiguracaoGeradorEsparso,
     FFNGeradorEsparsa,
 )
-from .modelo_gerador_esparso_v62 import ModeloGeradorEsparsoV62
+from .runtime_cache_esparso import ModeloGeradorEsparsoComCache
 
 
 @dataclass(frozen=True)
@@ -578,8 +578,8 @@ class FFNCombinatoriaV73(nn.Module):
         return (saida + self.camada_2.bias).view(*forma)
 
 
-class ModeloGeradorEsparsoRoteadoV73(ModeloGeradorEsparsoV62):
-    """Núcleo treinável da V7.3, preservando a V6.2 separadamente."""
+class ModeloGeradorEsparsoRoteadoV73(ModeloGeradorEsparsoComCache):
+    """Núcleo treinável da V7.3 com cache causal reutilizável."""
 
     def __init__(
         self,

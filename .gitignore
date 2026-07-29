@@ -12,5 +12,9 @@ venv_cuda/
 .vscode/
 *.log
 *.pid
+dados/
+datasets/
+.cache/
+cache/
 Thumbs.db
 .DS_Store

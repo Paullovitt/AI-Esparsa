@@ -1,4 +1,4 @@
-"""Testes do runtime CUDA fundido V7.3.
+"""Testes do runtime V7.3 e de seu cache causal.
 
 Autor: Paulo Augusto
 Ano: 2026
@@ -6,15 +6,11 @@ Ano: 2026
 
 from __future__ import annotations
 
-import io
-import sys
 import unittest
-from contextlib import redirect_stdout
-from unittest.mock import patch
 
 import torch
 
-import executar_gerador_esparso_v73 as executor_v73
+from executar_gerador_esparso_v73 import gerar_greedy_v73
 from src.modelo_gerador_esparso import ConfiguracaoGeradorEsparso
 from src.modelo_gerador_esparso_v73 import (
     ConfiguracaoRuntimeV73,
@@ -82,6 +78,43 @@ class TesteModeloGeradorEsparsoV73(unittest.TestCase):
             set(self.referencia.state_dict()),
         )
 
+    def test_cache_incremental_preserva_recalculo_completo(self) -> None:
+        prefixo = torch.randint(1, 41, (1, 6))
+        novo = torch.randint(1, 41, (1, 1))
+        with torch.inference_mode():
+            logits_cache, cache = self.v73.iniciar_cache_geracao(prefixo)
+            logits_completos, _ = self.v73(prefixo)
+            self.assertTrue(
+                torch.allclose(
+                    logits_cache,
+                    logits_completos[:, -1:],
+                    atol=2e-5,
+                    rtol=1e-5,
+                )
+            )
+            logits_cache, _ = self.v73.avancar_cache_geracao(novo, cache)
+            logits_completos, _ = self.v73(torch.cat((prefixo, novo), dim=1))
+        self.assertTrue(
+            torch.allclose(
+                logits_cache,
+                logits_completos[:, -1:],
+                atol=2e-5,
+                rtol=1e-5,
+            )
+        )
+
+    def test_geracao_greedy_retorna_metricas(self) -> None:
+        prefixo = torch.randint(1, 41, (1, 3))
+        gerados, medidas = gerar_greedy_v73(
+            self.v73,
+            prefixo,
+            maximo_novos_tokens=2,
+            eos_id=0,
+        )
+        self.assertEqual(tuple(gerados.shape), (1, 5))
+        self.assertEqual(medidas["tokens_gerados"], 2.0)
+        self.assertGreater(medidas["tokens_por_segundo"], 0.0)
+
     def test_auditoria_nao_inventa_parametros(self) -> None:
         auditoria = self.v73.auditoria()
         self.assertTrue(auditoria["kernel_ffn_fundido"])
@@ -103,59 +136,8 @@ class TesteModeloGeradorEsparsoV73(unittest.TestCase):
                 ConfiguracaoRuntimeV73(limiar_tokens_lote=0),
             )
 
-    def test_executor_separa_validacao_de_benchmark(self) -> None:
-        """Evita repassar opções de benchmark ao contrato do validador."""
 
-        medidas_validacao = {
-            "cobertura_palavras_chave": 1.0,
-            "retentativas": 0,
-        }
-        medidas_desempenho = {
-            "tokens_por_segundo": 900.0,
-            "latencia_primeiro_token_ms": 6.0,
-        }
-        with (
-            patch.object(
-                executor_v73,
-                "carregar_v73",
-                return_value=(object(), object(), {}),
-            ) as carregar,
-            patch.object(
-                executor_v73,
-                "validar_prompt_publico",
-                return_value=["campos"],
-            ),
-            patch.object(
-                executor_v73,
-                "gerar_relato_validado",
-                return_value=("texto aprovado", medidas_validacao),
-            ) as gerar,
-            patch.object(
-                executor_v73,
-                "benchmark_autorregressivo",
-                return_value=medidas_desempenho,
-            ) as benchmark,
-            patch.object(
-                executor_v73.torch.cuda,
-                "is_available",
-                return_value=False,
-            ),
-            patch.object(
-                sys,
-                "argv",
-                ["executar_gerador_esparso_v73.py", "--permitir-fallback"],
-            ),
-            redirect_stdout(io.StringIO()) as saida,
-        ):
-            executor_v73.main()
-
-        self.assertFalse(carregar.call_args.kwargs["exigir_kernel_cuda"])
-        self.assertEqual(gerar.call_args.kwargs, {})
-        benchmark.assert_called_once()
-        self.assertIn("cobertura=100%", saida.getvalue())
-
-
-@unittest.skipUnless(torch.cuda.is_available(), "CUDA indisponível")
+@unittest.skipUnless(torch.cuda.is_available(), "CUDA indisponivel")
 class TesteKernelCudaV73(unittest.TestCase):
     def test_kernel_preserva_argmax_do_forward(self) -> None:
         configuracao = ConfiguracaoGeradorEsparso()
