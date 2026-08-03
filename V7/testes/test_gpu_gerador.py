@@ -22,7 +22,7 @@ class TesteGPUGerador(unittest.TestCase):
     def test_checkpoint_v73_executa_na_gpu_sem_compilar_kernel(self) -> None:
         dispositivo = torch.device("cuda")
         modelo, tokenizador, _ = carregar_v73(
-            RAIZ / "modelos" / "gerador_esparso_v73_bpe8192_5x3000_topologia.pt",
+            RAIZ / "modelos" / "gerador_esparso_v73_bpe8192_refino_eos3_ul005_topologia.pt",
             dispositivo,
             exigir_kernel_cuda=False,
         )

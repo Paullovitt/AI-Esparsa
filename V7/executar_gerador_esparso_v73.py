@@ -34,7 +34,7 @@ from src.topologia_checkpoint_v73 import validar_topologia_checkpoint
 
 RAIZ = Path(__file__).resolve().parent
 CHECKPOINT_PADRAO = (
-    RAIZ / "modelos" / "gerador_esparso_v73_bpe8192_5x3000_topologia.pt"
+    RAIZ / "modelos" / "gerador_esparso_v73_bpe8192_refino_eos3_ul005_topologia.pt"
 )
 MODELOS_V73_COMPATIVEIS = {
     "gerador-esparso-v73-base",

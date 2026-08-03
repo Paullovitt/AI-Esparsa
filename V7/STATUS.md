@@ -6,13 +6,13 @@ Somente a V7.3 textual BPE-8192 está ativa nesta pasta. A versão do código é
 
 Checkpoint operacional:
 
-`modelos/gerador_esparso_v73_bpe8192_5x3000_topologia.pt`
+`modelos/gerador_esparso_v73_bpe8192_refino_eos3_ul005_topologia.pt`
 
 SHA-256:
 
-`0fa1e7fc43dcce7fd7d4561c941c3ee4c3d64ee6a2b41b5e199774a2927c21fa`
+`23af2ea91fb62153559edb9fb2ca3bf33655f1f6d3ab125751f9e33afd3339ad`
 
-O checkpoint original permanece preservado, sem alteração, com SHA-256 `151e3bed5c9d2c6f366fa4ae5799de8577a4baa41f82b381dbb5039fbfa43b65`.
+O checkpoint anterior com topologia permanece preservado com SHA-256 `0fa1e7fc43dcce7fd7d4561c941c3ee4c3d64ee6a2b41b5e199774a2927c21fa`. O checkpoint original também permanece intacto, com SHA-256 `151e3bed5c9d2c6f366fa4ae5799de8577a4baa41f82b381dbb5039fbfa43b65`.
 
 ## Correções da versão 2.8.0
 
@@ -43,8 +43,10 @@ O checkpoint original permanece preservado, sem alteração, com SHA-256 `151e3b
 
 ## Validação do projeto
 
-A suíte ampliada cobre prompt real, topologia adulterada, opções arquiteturais, BPE legado, CPU e CUDA. Em 3 de agosto de 2026, 43 testes passaram em 11,84 s.
+A suíte ampliada cobre prompt real, topologia adulterada, opções arquiteturais, BPE legado, CPU e CUDA. Em 3 de agosto de 2026, 43 testes passaram em 11,88 s.
 
-## Pendência científica
+## Refino promovido
 
-Os defeitos de integração e auditoria foram corrigidos. A qualidade aprendida do checkpoint não pode ser reparada sem novo treinamento: a geração ainda pode ser repetitiva ou pouco coerente e deve ser considerada experimental até passar nos critérios do avaliador.
+O refino de três épocas e 9.000 passos foi validado novamente pelo avaliador 2.8.0 em 50 prompts. A amostragem controlada obteve repetição média 0,1497, `distinct_2` 0,9178, repetição consecutiva média 1,32 e taxa de EOS 0,74; o resultado final foi `aprovado`.
+
+A aprovação cobre os critérios mecânicos de diversidade e término. A correção factual e a coerência ainda são experimentais, e o modo greedy puro continua inadequado por repetição elevada.

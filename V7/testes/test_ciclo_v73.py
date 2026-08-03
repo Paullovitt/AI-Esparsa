@@ -15,7 +15,7 @@ from executar_gerador_esparso_v73 import carregar_v73, formatar_prompt
 
 RAIZ = Path(__file__).resolve().parents[1]
 CHECKPOINT_V73 = (
-    RAIZ / "modelos" / "gerador_esparso_v73_bpe8192_5x3000_topologia.pt"
+    RAIZ / "modelos" / "gerador_esparso_v73_bpe8192_refino_eos3_ul005_topologia.pt"
 )
 
 
@@ -30,8 +30,10 @@ class TesteCicloV73(unittest.TestCase):
             checkpoint["modelo"],
             "gerador-esparso-v7-textual-experimental",
         )
-        self.assertEqual(checkpoint["epoca"], 5)
-        self.assertEqual(checkpoint["status"], "modelo_bpe8192_principal")
+        self.assertEqual(checkpoint["epoca"], 3)
+        self.assertEqual(checkpoint["status"], "aprovado_avaliacao_v280")
+        self.assertTrue(checkpoint["elegivel_promocao"])
+        self.assertEqual(checkpoint["avaliacao_qualidade"]["status"], "aprovado")
         self.assertEqual(checkpoint["tokenizador"]["tipo"], "bpe_codigo_bytes_v1")
         self.assertEqual(tokenizador.tamanho, 8192)
         self.assertEqual(checkpoint["topologia"]["formato"], "coo-v1")
@@ -164,12 +166,12 @@ class TesteCicloV73(unittest.TestCase):
         self.assertNotIn("estado_agendador", checkpoint)
         self.assertAlmostEqual(
             checkpoint["metricas_validacao"]["ppl_token"],
-            58.51144545946591,
+            55.87224300774265,
             places=8,
         )
         self.assertAlmostEqual(
             checkpoint["metricas_validacao"]["bits_por_byte"],
-            1.3635424677012467,
+            1.3480766482646738,
             places=8,
         )
 
